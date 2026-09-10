@@ -1,0 +1,26 @@
+{
+  "name": "bing-webmaster-cli",
+  "version": "0.1.0",
+  "description": "Unofficial CLI for the Bing Webmaster Tools JSON API",
+  "type": "module",
+  "bin": {
+    "bwt": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "npm run build && node test/smoke.mjs"
+  },
+  "license": "MIT",
+  "author": "Real Roboto",
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^20.0.0"
+  }
+}
