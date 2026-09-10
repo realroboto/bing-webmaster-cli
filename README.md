@@ -37,6 +37,10 @@ Skipped (add on demand): OAuth (apikey only), table/CSV output, disk cache, retr
 
 Issues and specs live as GitHub issues (`gh` CLI). See `docs/agents/issue-tracker.md`.
 
+### Triage labels
+
+Canonical roles, label strings equal to their names. See `docs/agents/triage-labels.md`.
+
 ### Domain docs
 
 Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
