@@ -1,6 +1,6 @@
-# bing-webmaster-cli (`bwt`)
-
 > **Unofficial. Not affiliated with or endorsed by Microsoft.** Wraps the public Bing Webmaster Tools JSON API.
+
+# bing-webmaster-cli (`bwt`)
 
 Zero-dependency Node CLI covering every Bing Webmaster Tools API method.
 

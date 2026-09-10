@@ -48,28 +48,19 @@ export function buildRequest(
   const query = new URLSearchParams();
   query.set("apikey", apiKey);
 
-  if (isGet(method)) {
-    appendParams(query, params);
-    return {
-      method,
-      request: {
-        url: `${BASE_URL}${method}?${query.toString()}`,
-        init: { method: "GET" },
-      },
-    };
-  }
+  const get = isGet(method);
+  if (get) appendParams(query, params);
+  const url = `${BASE_URL}${method}?${query.toString()}`;
 
-  return {
-    method,
-    request: {
-      url: `${BASE_URL}${method}?${query.toString()}`,
-      init: {
+  const init: RequestInit = get
+    ? { method: "GET" }
+    : {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(params),
-      },
-    },
-  };
+      };
+
+  return { method, request: { url, init } };
 }
 
 export interface CallOptions {
