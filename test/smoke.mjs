@@ -28,6 +28,19 @@ import { METHODS } from "../dist/methods.js";
   assert.deepEqual(unwrap(envelope), { x: 1 });
 }
 
+// 3b. non-ok response surfaces the Bing fault Message + ErrorCode.
+{
+  const fetchImpl = async () => ({
+    ok: false,
+    status: 400,
+    text: async () => JSON.stringify({ ErrorCode: 3, Message: "InvalidApiKey" }),
+  });
+  await assert.rejects(
+    () => callApi("GetUserSites", {}, { apiKey: "KEY", fetchImpl }),
+    /InvalidApiKey \(ErrorCode 3\)/,
+  );
+}
+
 // 4. all methods present.
 assert.equal(METHODS.length, 62);
 

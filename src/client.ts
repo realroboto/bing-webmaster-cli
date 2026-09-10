@@ -80,10 +80,20 @@ export async function callApi(
   const res = await fetchImpl(request.url, request.init);
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`Bing Webmaster API error ${res.status}: ${body}`);
+    throw new Error(`Bing Webmaster API error ${res.status}: ${formatFault(body)}`);
   }
   const envelope = (await res.json()) as { d?: unknown };
   return envelope;
+}
+
+/** Bing faults are top-level {"ErrorCode":N,"Message":"..."} (not in the "d"
+ * envelope). Render as "Message (ErrorCode N)"; fall back to the raw body. */
+function formatFault(body: string): string {
+  try {
+    const f = JSON.parse(body) as { ErrorCode?: number; Message?: string };
+    if (f.Message) return `${f.Message} (ErrorCode ${f.ErrorCode})`;
+  } catch {}
+  return body;
 }
 
 /** Unwrap the {"d": ...} envelope; returns the payload as-is if "d" is absent. */
