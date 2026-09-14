@@ -59,6 +59,7 @@ Most take `--siteUrl`. Per-method params live in the [`IWebmasterApi` reference]
 - **Links** — GetLinkCounts, GetUrlLinks, GetConnectedPages, AddConnectedPage
 - **Blocks & deep links** — GetBlockedUrls, AddBlockedUrl, RemoveBlockedUrl, GetActivePagePreviewBlocks, AddPagePreviewBlock, RemovePagePreviewBlock, GetDeepLinkBlocks, AddDeepLinkBlock, RemoveDeepLinkBlock, GetDeepLinkAlgoUrls, GetDeepLink, UpdateDeepLink
 - **URL info** — GetUrlInfo, GetUrlTrafficInfo, GetChildrenUrlInfo, GetChildrenUrlTrafficInfo
+  All four answer `400 UnknownError` server-side, on every account tested. Don't reach for them; use Site Explorer in the web UI. See issue #3.
 - **Feeds & sitemaps** — GetFeeds, GetFeedDetails, SubmitFeed, RemoveFeed
 - **Query parameters** — GetQueryParameters, AddQueryParameter, EnableDisableQueryParameter, RemoveQueryParameter
 - **Country/region targeting** — GetCountryRegionSettings, AddCountryRegionSettings, RemoveCountryRegionSettings

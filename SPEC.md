@@ -86,7 +86,7 @@ A self-maintained, zero-dependency Node CLI — package `bing-webmaster-cli`, bi
 - Disk response cache, retries, rate-limit backoff.
 - Per-command help text and per-method parameter validation (the API validates and returns faults).
 - POX/XML and SOAP transports (retiring 2026-08-31; JSON-only).
-- Creating the GitHub remote and publishing to npm — left to the operator.
+- Creating the GitHub remote — left to the operator. (npm: published, latest `0.1.1`.)
 
 ## Further Notes
 
