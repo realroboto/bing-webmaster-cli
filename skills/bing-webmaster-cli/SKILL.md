@@ -28,6 +28,10 @@ bwt <Method> [--param value ...] [--raw]
 - Method name is case-insensitive; canonical casing is sent.
 - `Get*` → GET, everything else → POST. `apikey` always rides the query string. Verb is automatic — never specify it.
 - `GetChildrenUrlInfo` is the one POST-ing `Get*`. Filters are flat integer flags (`--httpCodeFilters`, `--crawlDateFilter`, `--discoveredDateFilter`, `--docFlagsFilters`), folded into its `filterProperties` body. One integer each, no comma-join; `0` = any.
+  - `--httpCodeFilters`: 1=2xx, 2=3xx, 4=301, 8=302, 16=4xx, 32=5xx, 64=other.
+  - `--crawlDateFilter`: 1=last week, 2=last 2 weeks, 4=last 3 weeks.
+  - `--discoveredDateFilter`: 1=last week, 2=last month.
+  - `--docFlagsFilters`: 1=blocked by robots.txt, 2=malware.
 - Array params: repeat the flag (`--urlList a --urlList b`) or comma-join (`--urlList a,b`).
 - Output is the unwrapped `.d` payload, ready to pipe into `jq`. `--raw` keeps the full `{"d":...}` envelope.
 
