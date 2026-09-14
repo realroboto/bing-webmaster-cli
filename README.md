@@ -24,7 +24,7 @@ bwt --help                            # usage + methods
 
 - Method name is case-insensitive; the API is called with canonical casing.
 - `Get*` → GET, everything else → POST. `apikey` is always sent in the query string.
-- Exception: `GetChildrenUrlInfo` is POST (its `FilterProperties` argument can't ride a query string). Pass filters as flat flags — `--httpCodeFilters`, `--crawlDateFilter`, `--discoveredDateFilter`, `--docFlagsFilters` — as integers; they are folded into the body. Default `0` = any.
+- Exception: `GetChildrenUrlInfo` is POST (its `FilterProperties` argument can't ride a query string). Pass filters as flat flags — `--httpCodeFilters`, `--crawlDateFilter`, `--discoveredDateFilter`, `--docFlagsFilters` — one integer each, no comma-join. They are folded into the body; `0` = any.
 - Output is the unwrapped JSON payload. `--raw` prints the full `{"d": ...}` envelope.
 - Array params: repeat the flag or comma-join.
 
