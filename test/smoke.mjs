@@ -20,6 +20,51 @@ import { METHODS } from "../dist/methods.js";
   assert.deepEqual(JSON.parse(request.init.body), { url: "https://x.com/p" });
 }
 
+// 2b. GetChildrenUrlInfo is the sole Get* exception: POST with a nested
+// filterProperties DataContract, numeric page, apikey still in the query.
+{
+  const { request } = buildRequest("getchildrenurlinfo", { siteUrl: "https://x.com", url: "https://x.com/d", page: "0" }, "KEY");
+  assert.equal(request.init.method, "POST");
+  assert.equal(new URL(request.url).searchParams.get("apikey"), "KEY");
+  assert.deepEqual(JSON.parse(request.init.body), {
+    siteUrl: "https://x.com",
+    url: "https://x.com/d",
+    page: 0,
+    filterProperties: {
+      __type: "FilterProperties:#Microsoft.Bing.Webmaster.Api",
+      CrawlDateFilter: 0,
+      DiscoveredDateFilter: 0,
+      DocFlagsFilters: 0,
+      HttpCodeFilters: 0,
+    },
+  });
+}
+
+// 2c. filter flags land inside filterProperties, as numbers, not at the top level.
+{
+  const { request } = buildRequest("GetChildrenUrlInfo", { siteUrl: "https://x.com", url: "https://x.com/d", httpCodeFilters: "4" }, "KEY");
+  const body = JSON.parse(request.init.body);
+  assert.equal(body.httpCodeFilters, undefined);
+  assert.equal(body.filterProperties.HttpCodeFilters, 4);
+  assert.equal(body.filterProperties.CrawlDateFilter, 0);
+}
+
+// 2d. the exception stays narrow: the sibling method has no filterProperties, so it stays GET.
+{
+  const { request } = buildRequest("GetChildrenUrlTrafficInfo", { siteUrl: "https://x.com", url: "https://x.com/d" }, "KEY");
+  assert.equal(request.init.method, "GET");
+  assert.equal(request.init.body, undefined);
+}
+
+// 2e. a non-numeric or comma-joined filter flag errors instead of silently
+// sending null (Number([..]) → NaN → null in JSON).
+{
+  const call = (params) => () => buildRequest("GetChildrenUrlInfo", params, "KEY");
+  assert.throws(call({ httpCodeFilters: "abc" }), /--httpCodeFilters must be a single integer/);
+  assert.throws(call({ httpCodeFilters: ["4", "5"] }), /--httpCodeFilters must be a single integer/);
+  assert.throws(call({ page: "x" }), /--page must be a single integer/);
+}
+
 // 3. envelope unwraps; --raw keeps it (mock fetch).
 {
   const fetchImpl = async () => ({ ok: true, json: async () => ({ d: { x: 1 } }) });

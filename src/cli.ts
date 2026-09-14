@@ -56,7 +56,8 @@ Usage:
   bwt --help                                 this help
 
 Auth: set ${API_KEY_ENV} in the environment.
-Get* methods issue GET, others POST. Output is the unwrapped payload
+Get* methods issue GET, others POST (GetChildrenUrlInfo is the lone
+Get* that POSTs). Output is the unwrapped payload
 (the {"d": ...} envelope); --raw prints the full envelope.
 
 Methods:

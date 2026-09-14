@@ -15,8 +15,52 @@ export function getApiKey(env: NodeJS.ProcessEnv = process.env): string {
   return key;
 }
 
+// GetChildrenUrlInfo is the only Get* method whose signature takes a complex
+// DataContract (FilterProperties), so it can't be expressed in a query string:
+// the API answers 405 to GET and only accepts POST with a JSON body.
+const CHILDREN_URL_INFO = "GetChildrenUrlInfo";
+
+const FILTER_FIELDS = [
+  "CrawlDateFilter",
+  "DiscoveredDateFilter",
+  "DocFlagsFilters",
+  "HttpCodeFilters",
+] as const;
+const FILTER_LOOKUP = new Map(FILTER_FIELDS.map((f) => [f.toLowerCase(), f]));
+
 function isGet(method: Method): boolean {
-  return method.startsWith("Get");
+  return method.startsWith("Get") && method !== CHILDREN_URL_INFO;
+}
+
+/**
+ * Fold the flat CLI flags into the body GetChildrenUrlInfo expects: filter
+ * flags move inside `filterProperties` (defaulting to 0 = "any"), and `page`
+ * plus the filters go as numbers — the DataContract rejects strings.
+ */
+function toInt(key: string, value: Params[string]): number {
+  const n = Number(value);
+  // Catches both typos and the CLI's comma-join array syntax, which Number()
+  // would otherwise turn into NaN and JSON.stringify into a silent null.
+  if (!Number.isFinite(n)) {
+    throw new Error(`--${key} must be a single integer, got: ${value}`);
+  }
+  return n;
+}
+
+function childrenUrlInfoBody(params: Params): Record<string, unknown> {
+  const filterProperties: Record<string, unknown> = {
+    __type: "FilterProperties:#Microsoft.Bing.Webmaster.Api",
+  };
+  for (const field of FILTER_FIELDS) filterProperties[field] = 0;
+
+  const body: Record<string, unknown> = { filterProperties };
+  for (const [key, value] of Object.entries(params)) {
+    const field = FILTER_LOOKUP.get(key.toLowerCase());
+    if (field) filterProperties[field] = toInt(key, value);
+    else if (key.toLowerCase() === "page") body.page = toInt(key, value);
+    else body[key] = value;
+  }
+  return body;
 }
 
 function appendParams(qs: URLSearchParams, params: Params): void {
@@ -57,7 +101,9 @@ export function buildRequest(
     : {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
+        body: JSON.stringify(
+          method === CHILDREN_URL_INFO ? childrenUrlInfoBody(params) : params
+        ),
       };
 
   return { method, request: { url, init } };

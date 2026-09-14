@@ -49,7 +49,7 @@ A self-maintained, zero-dependency Node CLI — package `bing-webmaster-cli`, bi
   - Base: `https://ssl.bing.com/webmaster/api.svc/json/<Method>`.
   - Auth: `apikey` query-string param on every request, including POST.
   - Format: JSON via the `/json/` path segment — there is no `format=json` query param.
-  - Verb: method name prefix `Get` → GET (params in query string); otherwise → POST (params in JSON body, `apikey` still in the query string).
+  - Verb: method name prefix `Get` → GET (params in query string); otherwise → POST (params in JSON body, `apikey` still in the query string). **One exception:** `GetChildrenUrlInfo` takes a complex `FilterProperties` DataContract and answers 405 to GET — it is POSTed with `filterProperties` nested in the body. Its sibling `GetChildrenUrlTrafficInfo` has no such argument and stays GET.
   - Response envelope: `{"d": <payload>}`; unwrap `.d` before printing unless `--raw`.
 - **Method casing.** Accept the method argument case-insensitively; call the API with the exact table casing.
 - **Array params.** Accept repeated flags (`--urlList a --urlList b`) or comma-joined (`--urlList a,b`).
