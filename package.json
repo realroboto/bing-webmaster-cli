@@ -1,6 +1,6 @@
 {
   "name": "bing-webmaster-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Unofficial CLI for the Bing Webmaster Tools JSON API",
   "type": "module",
   "bin": {
