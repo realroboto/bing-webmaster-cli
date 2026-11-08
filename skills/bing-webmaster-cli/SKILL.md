@@ -59,7 +59,7 @@ Most take `--siteUrl`. Per-method params live in the [`IWebmasterApi` reference]
 - **Links** — GetLinkCounts, GetUrlLinks, GetConnectedPages, AddConnectedPage
 - **Blocks & deep links** — GetBlockedUrls, AddBlockedUrl, RemoveBlockedUrl, GetActivePagePreviewBlocks, AddPagePreviewBlock, RemovePagePreviewBlock, GetDeepLinkBlocks, AddDeepLinkBlock, RemoveDeepLinkBlock, GetDeepLinkAlgoUrls, GetDeepLink, UpdateDeepLink
 - **URL info** — GetUrlInfo, GetUrlTrafficInfo, GetChildrenUrlInfo, GetChildrenUrlTrafficInfo
-  All four answer `400 UnknownError` server-side, on every account tested. Don't reach for them; use Site Explorer in the web UI. See issue #3.
+  All four answer 200 (checked 2026-11-08 on two sites; earlier `400 UnknownError` outage: issue #3). Year-1 dates (`/Date(-62135596800000)/`) = Bing has no crawl record. `HttpStatus` reads 0 even on crawled pages. `GetUrlTrafficInfo` gave 0 for a page with clicks; use `GetPageStats` for traffic.
 - **Feeds & sitemaps** — GetFeeds, GetFeedDetails, SubmitFeed, RemoveFeed
 - **Query parameters** — GetQueryParameters, AddQueryParameter, EnableDisableQueryParameter, RemoveQueryParameter
 - **Country/region targeting** — GetCountryRegionSettings, AddCountryRegionSettings, RemoveCountryRegionSettings
