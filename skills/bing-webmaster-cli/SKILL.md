@@ -64,6 +64,10 @@ Most take `--siteUrl`. Per-method params live in the [`IWebmasterApi` reference]
 - **Query parameters** — GetQueryParameters, AddQueryParameter, EnableDisableQueryParameter, RemoveQueryParameter
 - **Country/region targeting** — GetCountryRegionSettings, AddCountryRegionSettings, RemoveCountryRegionSettings
 
+## Not in the API
+
+- **Site Scan** — Bing Webmaster UI only (Site Scan → Start new scan); no API method. "Crawl all subdomains" is off by default: a scan of `https://x.com/` skips `sub.x.com`. A scan can take up to 2 days.
+
 ## Errors
 
 Non-200 → thrown as `Bing Webmaster API error <status>: <Message> (ErrorCode <n>)`, exit 1. The fault (e.g. `InvalidApiKey`, `ThrottleUser`) is top-level, not in the `.d` envelope.
