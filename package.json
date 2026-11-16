@@ -10,17 +10,20 @@
     "dist"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=26"
   },
+  "packageManager": "pnpm@12.21.0",
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "npm run build",
-    "test": "npm run build && node test/smoke.mjs"
+    "lint": "biome lint",
+    "prepublishOnly": "pnpm run build",
+    "test": "pnpm run build && node test/smoke.mjs"
   },
   "license": "MIT",
   "author": "Real Roboto",
   "devDependencies": {
-    "typescript": "^5.6.0",
-    "@types/node": "^20.0.0"
+    "@biomejs/biome": "2.6.8",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
   }
 }

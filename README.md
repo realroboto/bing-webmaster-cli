@@ -32,6 +32,14 @@ Covers all 62 API methods. See `SPEC.md` for the full inventory and design.
 
 Skipped (add on demand): OAuth (apikey only), table/CSV output, disk cache, retries, per-command help.
 
+## Develop
+
+```sh
+pnpm install   # Node >= 26, pnpm 12
+pnpm test      # tsc build + smoke test
+pnpm lint      # Biome
+```
+
 ## Agent skills
 
 ### Issue tracker
