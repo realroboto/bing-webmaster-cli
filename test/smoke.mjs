@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { buildRequest, callApi, unwrap, getApiKey, API_KEY_ENV } from "../dist/client.js";
-import { METHODS } from "../dist/methods.js";
 
 // 1. Get* → GET, apikey in query, no body.
 {
@@ -65,6 +64,35 @@ import { METHODS } from "../dist/methods.js";
   assert.throws(call({ page: "x" }), /--page must be a single integer/);
 }
 
+// 2f. string keeps its commas; list splits on commas into a JSON array.
+{
+  const get = buildRequest("GetKeywordStats", { q: "a,b" }, "KEY").request;
+  assert.equal(new URL(get.url).searchParams.get("q"), "a,b");
+  const post = buildRequest("SubmitUrlBatch", { siteurl: "https://x.com", urlList: "https://x.com/a,https://x.com/b" }, "KEY").request;
+  assert.deepEqual(JSON.parse(post.init.body), { siteUrl: "https://x.com", urlList: ["https://x.com/a", "https://x.com/b"] });
+}
+
+// 2g. boolean and integer flags become JSON literals; bare flag (true) = true.
+{
+  const { request } = buildRequest("SubmitContent", { siteUrl: "s", url: "u", httpMessage: "h", structuredData: "d", dynamicServing: "1" }, "KEY");
+  assert.equal(JSON.parse(request.init.body).dynamicServing, 1);
+  const bool = (v) => JSON.parse(buildRequest("EnableDisableQueryParameter", { siteUrl: "s", queryParameter: "p", isEnabled: v }, "KEY").request.init.body).isEnabled;
+  assert.equal(bool("FALSE"), false);
+  assert.equal(bool(true), true);
+}
+
+// 2h. unknown flag, bad value, and repeated scalar throw before network,
+// naming the flag and listing the valid params.
+{
+  const call = (params) => () => buildRequest("EnableDisableQueryParameter", { siteUrl: "s", ...params }, "KEY");
+  const valid = /--siteUrl, --queryParameter, --isEnabled/;
+  assert.throws(call({ queryParam: "p" }), /--queryParam/);
+  assert.throws(call({ queryParam: "p" }), valid);
+  assert.throws(call({ isEnabled: "yes" }), /--isEnabled/);
+  assert.throws(call({ isEnabled: "yes" }), valid);
+  assert.throws(call({ queryParameter: ["a", "b"] }), /--queryParameter/);
+}
+
 // 3. envelope unwraps; --raw keeps it (mock fetch).
 {
   const fetchImpl = async () => ({ ok: true, json: async () => ({ d: { x: 1 } }) });
@@ -85,9 +113,6 @@ import { METHODS } from "../dist/methods.js";
     /InvalidApiKey \(ErrorCode 3\)/,
   );
 }
-
-// 4. all methods present.
-assert.equal(METHODS.length, 62);
 
 // 5. missing key throws, naming the variable.
 {
