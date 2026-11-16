@@ -53,7 +53,7 @@ bwt GetCrawlIssues --siteUrl https://x.com
 
 ## All 62 methods
 
-Most take `--siteUrl`. `bwt schema` prints every method with its verb, params, and .NET types (source: the [`IWebmasterApi` reference](https://learn.microsoft.com/en-us/dotnet/api/microsoft.bing.webmaster.api.interfaces.iwebmasterapi?view=bing-webmaster-dotnet)); `bwt --help` adds usage. `bwt` checks flag names and types locally; the API validates the rest and returns a fault, so try the call and read the error.
+Most take `--siteUrl`. `bwt schema` prints every method with its verb, params, .NET types, enum members, and DataContract fields (source: the [`IWebmasterApi` reference](https://learn.microsoft.com/en-us/dotnet/api/microsoft.bing.webmaster.api.interfaces.iwebmasterapi?view=bing-webmaster-dotnet)); `bwt --help` adds usage. `bwt` checks flag names and types locally; the API validates the rest and returns a fault, so try the call and read the error.
 
 - **Sites** — GetUserSites, AddSite, VerifySite, RemoveSite, GetSiteMoves, SubmitSiteMove
 - **Roles** — GetSiteRoles, AddSiteRoles, RemoveSiteRole
