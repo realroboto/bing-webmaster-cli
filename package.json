@@ -2,6 +2,10 @@
 	"name": "bing-webmaster-cli",
 	"version": "0.2.0",
 	"description": "Unofficial CLI for the Bing Webmaster Tools JSON API",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/realroboto/bing-webmaster-cli.git"
+	},
 	"type": "module",
 	"bin": {
 		"bwt": "dist/cli.js"
