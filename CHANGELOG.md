@@ -4,7 +4,7 @@ Notable changes per release. Format: [Keep a Changelog](https://keepachangelog.c
 
 ## 0.2.0 - 2026-11-16
 
-API audit (#7). Every flag now follows the type in the official `IWebmasterApi` reference. Live status per method: [`docs/verification-matrix.md`](docs/verification-matrix.md).
+API audit (#7). Every flag now follows its declared type in `src/contract.ts`. Source: the official `IWebmasterApi` reference, plus live checks where it is silent. Live status per method: [`docs/verification-matrix.md`](docs/verification-matrix.md).
 
 ### Breaking
 
@@ -15,7 +15,8 @@ API audit (#7). Every flag now follows the type in the official `IWebmasterApi` 
 - **Local checks fail before any request**, exit 1. The error names the flag and lists valid params:
   - unknown flag (was sent; the server ignored it);
   - repeated non-list flag (was sent as an array);
-  - bad value: non-integer, integer out of range, bad boolean, unknown enum member, bad date.
+  - bad value: non-integer, integer out of range, bad boolean, unknown enum member, bad date;
+  - bare flag on a non-`bool` param (was sent as `"true"`).
 - **`--apikey` is rejected.** The key comes only from `BING_WEBMASTER_API_KEY`.
 - **`DateTime` flags take ISO 8601 only.** `/Date(ms)/` input fails.
 - **AddPagePreviewBlock `--reason`** is the `BlockReason` enum: `Unknown` 0, `ContentNeedsToBeRemoved` 1, `PoorQualityAndIncorrect` 2. Names come from the live server; Microsoft documents none. `3` and up fail locally (were sent as given).
@@ -23,7 +24,7 @@ API audit (#7). Every flag now follows the type in the official `IWebmasterApi` 
 ### Added
 
 - Typed flags from `src/contract.ts`. `bool` and integers go as JSON literals. Enums take the member name (any case) or its number and send the number. `[Flags]` enums also take an OR of members as a number.
-- DataContract fields as flat flags. AddBlockedUrl, RemoveBlockedUrl, AddCountryRegionSettings, RemoveCountryRegionSettings, RemoveSiteRole, SaveCrawlSettings, and SubmitSiteMove now send the body the API expects.
+- DataContract fields as flat flags. AddBlockedUrl, RemoveBlockedUrl, AddCountryRegionSettings, RemoveCountryRegionSettings, RemoveSiteRole, SaveCrawlSettings, and SubmitSiteMove now send a nested object, `__type` first. Live-verified: all but RemoveSiteRole and SubmitSiteMove (checked offline only).
 - Dates: ISO 8601 in. JSON body gets `/Date(<ms>)/`; GET query gets UTC ISO 8601.
 - Flag names match case-insensitively; API casing is sent.
 - Verb comes from the param types: a `Get*` with a DataContract param POSTs (`GetChildrenUrlInfo`).
@@ -35,7 +36,3 @@ API audit (#7). Every flag now follows the type in the official `IWebmasterApi` 
 - A fault without `ErrorCode` no longer prints `ErrorCode undefined`.
 - Errors set `process.exitCode`: piped stderr is no longer cut.
 - The API key is read once per call.
-
-### Development
-
-- TypeScript 7, pnpm 12. `pnpm lint` runs `biome check` (format, lint, import order).
