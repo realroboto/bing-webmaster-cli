@@ -33,9 +33,7 @@ export const ENUMS = {
 	CrawlDateFilter: { Any: 0, LastWeek: 1, LastTwoWeeks: 2, LastThreeWeeks: 4 },
 	"DeepLink.DeepLinkWeight": { Disabled: 0, Low: 1, Normal: 2, High: 3 },
 	DiscoveredDateFilter: { Any: 0, LastWeek: 1, LastMonth: 2 },
-	// [Flags]
 	DocFlagsFilters: { Any: 0, IsBlockedByRobotsTxt: 1, IsMalware: 2 },
-	// [Flags]
 	HttpCodeFilters: {
 		Any: 0,
 		Code2xx: 1,
@@ -52,7 +50,13 @@ export const ENUMS = {
 } as const satisfies Record<string, Record<string, number>>;
 
 export type EnumName = keyof typeof ENUMS;
-type FieldType = BuiltinType | EnumName;
+/** Enums marked `[Flags]`: a value may OR members together. */
+export const FLAG_ENUMS: readonly EnumName[] = [
+	"DocFlagsFilters",
+	"HttpCodeFilters",
+];
+/** Every type a DataContract field or scalar method param can declare. */
+export type FieldType = BuiltinType | EnumName;
 
 /** DataContracts that appear as method params: `__type` hint and fields in page order. */
 export const CONTRACTS = {

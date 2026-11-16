@@ -18,19 +18,21 @@ bwt <Method> [--param value ...]      # call any API method
 bwt GetUserSites
 bwt SubmitUrl --siteUrl https://x.com --url https://x.com/page
 bwt SubmitUrlBatch --siteUrl https://x.com --urlList https://x.com/a,https://x.com/b
-bwt schema                            # dump methods (verb, params, types) as JSON
+bwt AddBlockedUrl --siteUrl https://x.com --Url https://x.com/old --EntityType Page --RequestType FullRemoval
+bwt schema                            # dump methods (verb, params, types, enums, DataContracts) as JSON
 bwt --help                            # usage + methods
 ```
 
 - Method name is case-insensitive; the API is called with canonical casing.
-- `Get*` → GET, everything else → POST. `apikey` is always sent in the query string.
-- Exception: `GetChildrenUrlInfo` is POST (its `FilterProperties` argument can't ride a query string). Pass filters as flat flags — `--httpCodeFilters`, `--crawlDateFilter`, `--discoveredDateFilter`, `--docFlagsFilters` — one integer each, no comma-join. They are folded into the body; `0` = any.
+- `Get*` → GET, everything else → POST. A `Get*` with a DataContract param (`GetChildrenUrlInfo`) is POST: a DataContract can't ride a query string. `apikey` is always sent in the query string.
 - Output is the unwrapped JSON payload. `--raw` prints the full `{"d": ...}` envelope.
 - Flags: `--name value` or `--name=value`; a bare flag means `true`. Names are case-insensitive; API casing is sent.
 - Values follow the declared type. `bool` and integers go as JSON literals. `string` keeps commas.
-- List params (`List<string>`): repeat the flag or comma-join.
+- List params (`List<string>`, `byte[]`): repeat the flag or comma-join.
+- Enum params: member name (case-insensitive) or its number; sent as the number. `[Flags]` enums also take an OR of members as a number.
+- DataContract params: pass each field as a flat flag (`--Url`, `--EntityType`). They fold into one nested object, `__type` first. Omitted fields stay omitted; `FilterProperties` fields default to `0` (Any). The DataContract param itself is not a flag.
 - Unknown flag, bad value, or repeated non-list flag: fails before any request. The error names the flag and lists valid params.
-- `bwt schema` prints `{ "<Method>": { "verb": "GET"|"POST", "params": { "<name>": "<.NET type>" } } }`.
+- `bwt schema` prints `{ "<Method>": { "verb": "GET"|"POST", "params": { "<name>": <type> } } }`. `<type>` is a .NET type string, `{ "enum", "flags"?, "members": { name: number } }`, or `{ "contract", "__type", "fields": { name: <type> } }`.
 
 Covers all 62 API methods. See `SPEC.md` for the full inventory and design.
 

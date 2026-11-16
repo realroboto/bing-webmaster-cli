@@ -19,8 +19,8 @@ import { buildRequest, callApi, unwrap, getApiKey, API_KEY_ENV } from "../dist/c
   assert.deepEqual(JSON.parse(request.init.body), { url: "https://x.com/p" });
 }
 
-// 2b. GetChildrenUrlInfo is the sole Get* exception: POST with a nested
-// filterProperties DataContract, numeric page, apikey still in the query.
+// 2b. a Get* method with a DataContract param POSTs: GetChildrenUrlInfo sends a
+// nested filterProperties (0 defaults), numeric page, apikey still in the query.
 {
   const { request } = buildRequest("getchildrenurlinfo", { siteUrl: "https://x.com", url: "https://x.com/d", page: "0" }, "KEY");
   assert.equal(request.init.method, "POST");
@@ -48,19 +48,19 @@ import { buildRequest, callApi, unwrap, getApiKey, API_KEY_ENV } from "../dist/c
   assert.equal(body.filterProperties.CrawlDateFilter, 0);
 }
 
-// 2d. the exception stays narrow: the sibling method has no filterProperties, so it stays GET.
+// 2d. the sibling method has no DataContract param, so it stays GET.
 {
   const { request } = buildRequest("GetChildrenUrlTrafficInfo", { siteUrl: "https://x.com", url: "https://x.com/d" }, "KEY");
   assert.equal(request.init.method, "GET");
   assert.equal(request.init.body, undefined);
 }
 
-// 2e. a non-numeric or comma-joined filter flag errors instead of silently
+// 2e. a bad, repeated, or non-integer value errors instead of silently
 // sending null (Number([..]) → NaN → null in JSON).
 {
   const call = (params) => () => buildRequest("GetChildrenUrlInfo", params, "KEY");
-  assert.throws(call({ httpCodeFilters: "abc" }), /--httpCodeFilters must be a single integer/);
-  assert.throws(call({ httpCodeFilters: ["4", "5"] }), /--httpCodeFilters must be a single integer/);
+  assert.throws(call({ httpCodeFilters: "abc" }), /--httpCodeFilters must be a HttpCodeFilters member/);
+  assert.throws(call({ httpCodeFilters: ["4", "5"] }), /--httpCodeFilters must be given once/);
   assert.throws(call({ page: "x" }), /--page must be a single integer/);
 }
 
@@ -91,6 +91,39 @@ import { buildRequest, callApi, unwrap, getApiKey, API_KEY_ENV } from "../dist/c
   assert.throws(call({ isEnabled: "yes" }), /--isEnabled/);
   assert.throws(call({ isEnabled: "yes" }), valid);
   assert.throws(call({ queryParameter: ["a", "b"] }), /--queryParameter/);
+}
+
+// 2i. enum flag: member name (any case) becomes its number.
+{
+  const weight = (v) => JSON.parse(buildRequest("UpdateDeepLink", { siteUrl: "s", algoUrl: "a", deepLink: "d", weight: v }, "KEY").request.init.body).weight;
+  assert.equal(weight("high"), 3);
+  assert.equal(weight("2"), 2);
+  assert.throws(() => weight("7"), /--weight must be a DeepLink.DeepLinkWeight member/);
+}
+
+// 2i'. a [Flags] enum takes an OR of members as a number, nothing outside them.
+{
+  const filters = (v) => () => JSON.parse(buildRequest("GetChildrenUrlInfo", { httpCodeFilters: v }, "KEY").request.init.body).filterProperties.HttpCodeFilters;
+  assert.equal(filters("5")(), 5);
+  assert.throws(filters("128"), /--httpCodeFilters must be a HttpCodeFilters member/);
+}
+
+// 2j. DataContract fields as flat flags fold into one nested object, __type
+// first, fields in contract order, omitted fields omitted.
+{
+  const { request } = buildRequest("addblockedurl", { url: "https://x.com/u1", requesttype: "FullRemoval", siteUrl: "https://x.com", EntityType: "0" }, "KEY");
+  const body = JSON.parse(request.init.body);
+  assert.deepEqual(body, {
+    siteUrl: "https://x.com",
+    blockedUrl: {
+      __type: "BlockedUrl:#Microsoft.Bing.Webmaster.Api",
+      EntityType: 0,
+      RequestType: 1,
+      Url: "https://x.com/u1",
+    },
+  });
+  assert.deepEqual(Object.keys(body.blockedUrl), ["__type", "EntityType", "RequestType", "Url"]);
+  assert.throws(() => buildRequest("AddBlockedUrl", { blockedUrl: "x" }, "KEY"), /Unknown flag --blockedUrl/);
 }
 
 // 3. envelope unwraps; --raw keeps it (mock fetch).

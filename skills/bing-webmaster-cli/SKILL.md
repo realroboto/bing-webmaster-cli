@@ -26,15 +26,17 @@ bwt <Method> [--param value ...] [--raw]
 ```
 
 - Method name is case-insensitive; canonical casing is sent.
-- `Get*` → GET, everything else → POST. `apikey` always rides the query string. Verb is automatic — never specify it.
-- `GetChildrenUrlInfo` is the one POST-ing `Get*`. Filters are flat integer flags (`--httpCodeFilters`, `--crawlDateFilter`, `--discoveredDateFilter`, `--docFlagsFilters`), folded into its `filterProperties` body. One integer each, no comma-join; `0` = any.
-  - `--httpCodeFilters`: 1=2xx, 2=3xx, 4=301, 8=302, 16=4xx, 32=5xx, 64=other.
-  - `--crawlDateFilter`: 1=last week, 2=last 2 weeks, 4=last 3 weeks.
-  - `--discoveredDateFilter`: 1=last week, 2=last month.
-  - `--docFlagsFilters`: 1=blocked by robots.txt, 2=malware.
+- `Get*` → GET, everything else → POST; a `Get*` with a DataContract param (`GetChildrenUrlInfo`) POSTs. `apikey` always rides the query string. Verb is automatic — never specify it.
+- DataContract params (`blockedUrl`, `settings`, `siteRole`, `crawlSettings`, `filterProperties`): pass each field as a flat flag, folded into the nested object with `__type`. Omitted fields stay omitted; `FilterProperties` fields default to `0` (Any). `bwt schema` lists the fields.
+- Enum flags take the member name (any case) or its number. `bwt schema` lists members. `[Flags]` enums (`HttpCodeFilters`, `DocFlagsFilters`) also take an OR of members as a number.
+- Example: `bwt GetChildrenUrlInfo --siteUrl https://x.com --url https://x.com/blog --page 0 --httpCodeFilters Code4xx`.
+  - `--httpCodeFilters`: Code2xx=1, Code3xx=2, Code301=4, Code302=8, Code4xx=16, Code5xx=32, AllOthers=64.
+  - `--crawlDateFilter`: LastWeek=1, LastTwoWeeks=2, LastThreeWeeks=4.
+  - `--discoveredDateFilter`: LastWeek=1, LastMonth=2.
+  - `--docFlagsFilters`: IsBlockedByRobotsTxt=1, IsMalware=2.
 - Flags: `--name value` or `--name=value`; a bare flag means `true`. Names are case-insensitive; API casing is sent.
 - Values follow the param type from `bwt schema`: `bool` → `true`/`false`; `int`/`short`/`ushort` → integer; `string` keeps commas (`--q "a,b"` is one string).
-- List params (`List<string>`): repeat the flag (`--urlList a --urlList b`) or comma-join (`--urlList a,b`).
+- List params (`List<string>`, `byte[]`): repeat the flag (`--urlList a --urlList b`) or comma-join (`--urlList a,b`).
 - Unknown flag, bad value, or repeated non-list flag → exit 1 before any request. The error names the flag and lists valid params.
 - Output is the unwrapped `.d` payload, ready to pipe into `jq`. `--raw` keeps the full `{"d":...}` envelope.
 
