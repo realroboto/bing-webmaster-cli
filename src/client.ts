@@ -101,7 +101,7 @@ const list =
       .map((v) => item(v));
   };
 
-// shortcut: enums and DataContracts go out as given, unvalidated; type them in #11.
+// shortcut: enums and DataContracts go out unvalidated, type them in #11.
 const passThrough = <K extends string>(o: Record<K, unknown>) =>
   Object.fromEntries(Object.keys(o).map((k) => [k, asIs])) as Record<
     K,
@@ -115,7 +115,7 @@ const BUILTIN: Record<BuiltinType, Coercer> = {
   ushort: int(0, 65535),
   int: int(-2147483648, 2147483647),
   "byte[]": list(int(0, 255)),
-  DateTime: asIs, // shortcut: sent as given, unvalidated; parse ISO 8601 in #12
+  DateTime: asIs, // shortcut: sent unvalidated, parse ISO 8601 in #12
   "List<string>": list(str),
 };
 
