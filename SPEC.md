@@ -42,9 +42,9 @@ A self-maintained, zero-dependency Node CLI — package `bing-webmaster-cli`, bi
 ## Implementation Decisions
 
 - **Two repos.** New standalone repo `bing-webmaster-cli` (primary deliverable). Separate follow-up swap in the container-build repo (`vmCODE`), gated on the npm publish.
-- **Stack.** Node ≥ 20, TypeScript, ESM. Zero runtime dependencies: built-in `fetch` for HTTP, `node:util` `parseArgs` for flags.
+- **Stack.** Node ≥ 26, TypeScript 7 (strict), ESM, pnpm 12, Biome lint. Zero runtime dependencies: built-in `fetch` for HTTP, hand-rolled flag parser (method params are dynamic; `parseArgs` cannot type them).
 - **Data-driven, not per-method handlers.** A single `METHODS` table lists all 62 method names verbatim (API casing). One generic dispatcher builds and issues the request. No hand-written handler per method.
-- **The seam — `buildRequest(method, params)`** (pure). Given a method name and parsed flags, returns the request descriptor: `{ url, method: "GET"|"POST", body? }`. This is the single, highest test seam. `fetch` and output-printing sit above it.
+- **The seam — `buildRequest(method, params, apiKey)`** (pure). Given a method name, parsed flags, and API key, returns `{ method, request: { url, init } }`: canonical method name plus `fetch` arguments (`init.method` `GET`|`POST`, `init.body` only on POST). This is the single, highest test seam. `fetch` and output-printing sit above it.
 - **Transport (verified):**
   - Base: `https://ssl.bing.com/webmaster/api.svc/json/<Method>`.
   - Auth: `apikey` query-string param on every request, including POST.
