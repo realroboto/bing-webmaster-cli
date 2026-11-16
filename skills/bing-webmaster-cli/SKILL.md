@@ -64,6 +64,7 @@ Most take `--siteUrl`. `bwt schema` prints every method with its verb, params, .
 - **Keywords** — GetKeyword, GetKeywordStats, GetRelatedKeywords
 - **Links** — GetLinkCounts, GetUrlLinks, GetConnectedPages, AddConnectedPage
 - **Blocks & deep links** — GetBlockedUrls, AddBlockedUrl, RemoveBlockedUrl, GetActivePagePreviewBlocks, AddPagePreviewBlock, RemovePagePreviewBlock, GetDeepLinkBlocks, AddDeepLinkBlock, RemoveDeepLinkBlock, GetDeepLinkAlgoUrls, GetDeepLink, UpdateDeepLink
+  AddDeepLinkBlock: `--market` is case-sensitive lowercase (`en-us`); `en-US` → `400 InvalidParameter` (checked 2026-11-16). RemoveDeepLinkBlock takes the values as added.
 - **URL info** — GetUrlInfo, GetUrlTrafficInfo, GetChildrenUrlInfo, GetChildrenUrlTrafficInfo
   All four answer 200 (checked 2026-11-16 on two sites; earlier `400 UnknownError` outage: issue #3). Year-1 dates (`/Date(-62135596800000)/`) = Bing has no crawl record. `HttpStatus` reads 0 even on crawled pages. `GetUrlTrafficInfo` gave 0 for a page with clicks; use `GetPageStats` for traffic.
 - **Feeds & sitemaps** — GetFeeds, GetFeedDetails, SubmitFeed, RemoveFeed
