@@ -304,9 +304,9 @@ export interface CallOptions {
 	apiKey?: string;
 }
 
-/** Call the API and return the parsed response, {"d": ...} envelope kept
- * (unwrap strips it). Throws on a non-2xx status, with the Bing fault text,
- * and when the full answer takes longer than TIMEOUT_S. */
+/** Call the API; return the parsed response with its {"d": ...} envelope
+ * (unwrap strips it). A non-2xx status throws the Bing fault text. No full
+ * answer within TIMEOUT_S throws a timeout error naming the method. */
 export async function callApi(
 	methodInput: string,
 	params: Params = {},
