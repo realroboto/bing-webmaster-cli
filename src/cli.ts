@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { API, type ApiMethod } from "./contract.js";
+import { API, type ApiMethod, CONTRACTS, ENUMS, FLAG_ENUMS, type TypeName } from "./contract.js";
 import { callApi, unwrap, getApiKey, verbOf, API_KEY_ENV, type Params } from "./client.js";
 
 // Hand-rolled arg parse: method params are dynamic, so parseArgs (needs a
@@ -46,21 +46,38 @@ function parseArgv(argv: string[]): Parsed {
 
 const METHODS = Object.keys(API) as ApiMethod[];
 
+/** Schema view of a type: enums list members, DataContracts list fields. */
+function describe(type: TypeName): unknown {
+  if (type in ENUMS) {
+    const e = type as keyof typeof ENUMS;
+    return { enum: e, ...(FLAG_ENUMS.includes(e) && { flags: true }), members: ENUMS[e] };
+  }
+  if (type in CONTRACTS) {
+    const { __type, fields } = CONTRACTS[type as keyof typeof CONTRACTS];
+    const described = Object.entries<TypeName>(fields).map(([f, t]) => [f, describe(t)]);
+    return { contract: type, __type, fields: Object.fromEntries(described) };
+  }
+  return type;
+}
+
 const USAGE = `bwt — Unofficial Bing Webmaster Tools CLI
 
 Usage:
   bwt <Method> [--param value ...] [--raw]   call any API method
-  bwt schema                                 dump methods (verb, params, types) as JSON
+  bwt schema                                 dump methods (verb, params, types, enum
+                                             members, DataContract fields) as JSON
   bwt --help                                 this help
 
 Auth: set ${API_KEY_ENV} in the environment.
-Get* methods issue GET, others POST (GetChildrenUrlInfo is the lone
-Get* that POSTs). Output is the unwrapped payload
-(the {"d": ...} envelope); --raw prints the full envelope.
+Get* methods issue GET, others POST; a Get* with a DataContract param
+POSTs. Output is the unwrapped payload (the {"d": ...} envelope); --raw
+prints the full envelope.
 
 Flags: --name value or --name=value; a bare flag means true. Names match
 case-insensitively. Lists take a repeated flag or a comma-join; strings keep
-commas. Unknown flags and bad values fail before any request.
+commas. Enums take a member name (any case) or its number. DataContract
+fields are flat flags (--Url, --EntityType); bwt folds them into the nested
+object. Unknown flags and bad values fail before any request.
 
 Methods:
 ${METHODS.map((m) => `  ${m}`).join("\n")}`;
@@ -75,7 +92,10 @@ async function main(argv: string[]): Promise<void> {
 
   if (positional.toLowerCase() === "schema") {
     const schema = Object.fromEntries(
-      METHODS.map((m) => [m, { verb: verbOf(m), params: API[m] }])
+      METHODS.map((m) => {
+        const params = Object.entries<TypeName>(API[m]).map(([p, t]) => [p, describe(t)]);
+        return [m, { verb: verbOf(m), params: Object.fromEntries(params) }];
+      })
     );
     console.log(JSON.stringify(schema, null, 2));
     return;

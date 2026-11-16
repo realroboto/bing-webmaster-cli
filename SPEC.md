@@ -49,12 +49,12 @@ A self-maintained, zero-dependency Node CLI — package `bing-webmaster-cli`, bi
   - Base: `https://ssl.bing.com/webmaster/api.svc/json/<Method>`.
   - Auth: `apikey` query-string param on every request, including POST.
   - Format: JSON via the `/json/` path segment — there is no `format=json` query param.
-  - Verb: method name prefix `Get` → GET (params in query string); otherwise → POST (params in JSON body, `apikey` still in the query string). **One exception:** `GetChildrenUrlInfo` takes a complex `FilterProperties` DataContract and answers 405 to GET — it is POSTed with `filterProperties` nested in the body. Its sibling `GetChildrenUrlTrafficInfo` has no such argument and stays GET.
+  - Verb: method name prefix `Get` → GET (params in query string); otherwise → POST (params in JSON body, `apikey` still in the query string). A `Get*` with a DataContract param is POST: WCF reads only scalars from a query string. Today only `GetChildrenUrlInfo` (`FilterProperties`; GET answers 405, #2). Its sibling `GetChildrenUrlTrafficInfo` has no DataContract and stays GET.
   - Response envelope: `{"d": <payload>}`; unwrap `.d` before printing unless `--raw`.
 - **Method casing.** Accept the method argument case-insensitively; call the API with the exact table casing.
-- **Flags.** The CLI parser only collects: `--k v` / `--k=v` → string, repeated flag → array, bare flag → `true`. `buildRequest` matches flags case-insensitively, sends API casing, and coerces by declared type: `bool` and integers → JSON literals, `string` keeps commas, list params split on commas (repeated flags or `--urlList a,b`). Unknown flag, bad value, or repeated scalar → throw before network, naming the flag and listing valid params.
+- **Flags.** The CLI parser only collects: `--k v` / `--k=v` → string, repeated flag → array, bare flag → `true`. `buildRequest` matches flags case-insensitively, sends API casing, and coerces by declared type: `bool` and integers → JSON literals, `string` keeps commas, list params split on commas (repeated flags or `--urlList a,b`), enums take member name or number and send the number. DataContract fields are flat flags, folded into one nested object per param, `__type` first; omitted fields stay omitted; `FilterProperties` defaults to `0`. Unknown flag, bad value, or repeated scalar → throw before network, naming the flag and listing valid params.
 - **Key handling.** Read `BING_WEBMASTER_API_KEY` from env. Missing → exit non-zero with a message naming the variable. Never accept the key as a flag.
-- **Commands.** `bwt <Method> [--flags]`; `bwt schema` (JSON: method → verb, params, types); `bwt` / `--help` (usage + method list); global `--raw`.
+- **Commands.** `bwt <Method> [--flags]`; `bwt schema` (JSON: method → verb, params, types, enum members, DataContract fields); `bwt` / `--help` (usage + method list); global `--raw`.
 - **Coverage.** All 62 methods (59 active + 3 obsolete legacy deep-link: `GetDeepLinkAlgoUrls`, `GetDeepLink`, `UpdateDeepLink`), exceeding the MCP's 59-active baseline.
 - **Packaging.** Unscoped `bing-webmaster-cli`, bin `{ "bwt": ... }`, MIT license, README with Microsoft-disclaimer first line and no Bing logo.
 
@@ -75,7 +75,7 @@ A self-maintained, zero-dependency Node CLI — package `bing-webmaster-cli`, bi
   1. `GetUserSites` → GET, `apikey` present in query, no body.
   2. `SubmitUrl` → POST, params in JSON body, `apikey` still in query.
   3. Envelope `{"d":{"x":1}}` unwraps to `{"x":1}`; `--raw` keeps the envelope (mock `fetch` for this one only).
-  4. Typed flags: string keeps commas, list splits; boolean and integer become JSON literals; unknown flag and bad value throw.
+  4. Typed flags: string keeps commas, list splits; boolean and integer become JSON literals; enum name becomes its number; DataContract flat flags nest with `__type` first; unknown flag and bad value throw.
   5. Missing `BING_WEBMASTER_API_KEY` → non-zero exit / thrown error naming the variable.
 - **No network.** Mock/stub `fetch`; the seam is pure so most cases need no stub at all.
 
