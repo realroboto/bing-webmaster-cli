@@ -76,9 +76,9 @@ prints the full envelope.
 Flags: --name value or --name=value; a bare flag means true. Names match
 case-insensitively. Lists take a repeated flag or a comma-join; strings keep
 commas. Enums take a member name (any case) or its number. Dates take
-ISO 8601 (2026-01-31, 2026-01-31T12:00:00Z). DataContract
-fields are flat flags (--Url, --EntityType); bwt folds them into the nested
-object. Unknown flags and bad values fail before any request.
+ISO 8601 (2026-01-31, 2026-01-31T12:00:00Z); a time needs Z or an offset.
+DataContract fields are flat flags (--Url, --EntityType); bwt folds them into
+the nested object. Unknown flags and bad values fail before any request.
 
 Methods:
 ${METHODS.map((m) => `  ${m}`).join("\n")}`;
