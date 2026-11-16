@@ -4,19 +4,19 @@ Canonical triage roles → the label strings used in this repo's GitHub issues. 
 
 ## Category roles
 
-| Canonical | Label |
-|---|---|
-| bug | `bug` |
+| Canonical   | Label         |
+| ----------- | ------------- |
+| bug         | `bug`         |
 | enhancement | `enhancement` |
 
 ## State roles
 
-| Canonical | Label |
-|---|---|
-| needs-triage | `needs-triage` |
-| needs-info | `needs-info` |
+| Canonical       | Label             |
+| --------------- | ----------------- |
+| needs-triage    | `needs-triage`    |
+| needs-info      | `needs-info`      |
 | ready-for-agent | `ready-for-agent` |
 | ready-for-human | `ready-for-human` |
-| wontfix | `wontfix` |
+| wontfix         | `wontfix`         |
 
 Every triaged issue carries exactly one category role and one state role.
