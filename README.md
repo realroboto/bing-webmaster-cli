@@ -18,7 +18,7 @@ bwt <Method> [--param value ...]      # call any API method
 bwt GetUserSites
 bwt SubmitUrl --siteUrl https://x.com --url https://x.com/page
 bwt SubmitUrlBatch --siteUrl https://x.com --urlList https://x.com/a,https://x.com/b
-bwt schema                            # dump the method list as JSON
+bwt schema                            # dump methods (verb, params, types) as JSON
 bwt --help                            # usage + methods
 ```
 
@@ -26,7 +26,10 @@ bwt --help                            # usage + methods
 - `Get*` → GET, everything else → POST. `apikey` is always sent in the query string.
 - Exception: `GetChildrenUrlInfo` is POST (its `FilterProperties` argument can't ride a query string). Pass filters as flat flags — `--httpCodeFilters`, `--crawlDateFilter`, `--discoveredDateFilter`, `--docFlagsFilters` — one integer each, no comma-join. They are folded into the body; `0` = any.
 - Output is the unwrapped JSON payload. `--raw` prints the full `{"d": ...}` envelope.
-- Array params: repeat the flag or comma-join.
+- Flags: `--name value` or `--name=value`; a bare flag means `true`. Names are case-insensitive; API casing is sent.
+- Values are coerced by declared type: `bool` and integers go as JSON literals, `string` keeps commas, list params (`List<string>`) take a repeated flag or a comma-join.
+- An unknown flag, a bad value, or a repeated non-list flag fails before any request, naming the flag and listing valid params.
+- `bwt schema` prints `{ "<Method>": { "verb": "GET"|"POST", "params": { "<name>": "<.NET type>" } } }`.
 
 Covers all 62 API methods. See `SPEC.md` for the full inventory and design.
 

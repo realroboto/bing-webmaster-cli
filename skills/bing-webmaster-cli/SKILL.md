@@ -32,7 +32,10 @@ bwt <Method> [--param value ...] [--raw]
   - `--crawlDateFilter`: 1=last week, 2=last 2 weeks, 4=last 3 weeks.
   - `--discoveredDateFilter`: 1=last week, 2=last month.
   - `--docFlagsFilters`: 1=blocked by robots.txt, 2=malware.
-- Array params: repeat the flag (`--urlList a --urlList b`) or comma-join (`--urlList a,b`).
+- Flags: `--name value` or `--name=value`; a bare flag means `true`. Names are case-insensitive; API casing is sent.
+- Values follow the param type from `bwt schema`: `bool` → `true`/`false`; `int`/`short`/`ushort` → integer; `string` keeps commas (`--q "a,b"` is one string).
+- List params (`List<string>`): repeat the flag (`--urlList a --urlList b`) or comma-join (`--urlList a,b`).
+- Unknown flag, bad value, or a repeated non-list flag → exit 1 before any request; the error names the flag and lists the method's valid params.
 - Output is the unwrapped `.d` payload, ready to pipe into `jq`. `--raw` keeps the full `{"d":...}` envelope.
 
 ## Common calls
@@ -48,7 +51,7 @@ bwt GetCrawlIssues --siteUrl https://x.com
 
 ## All 62 methods
 
-Most take `--siteUrl`. Per-method params live in the [`IWebmasterApi` reference](https://learn.microsoft.com/en-us/dotnet/api/microsoft.bing.webmaster.api.interfaces.iwebmasterapi?view=bing-webmaster-dotnet); the API validates and returns a fault, so try the call and read the error rather than pre-validating. `bwt schema` prints this list as JSON; `bwt --help` adds usage.
+Most take `--siteUrl`. `bwt schema` prints every method with its verb, params, and .NET types (source: the [`IWebmasterApi` reference](https://learn.microsoft.com/en-us/dotnet/api/microsoft.bing.webmaster.api.interfaces.iwebmasterapi?view=bing-webmaster-dotnet)); `bwt --help` adds usage. `bwt` checks flag names and types locally; the API validates the rest and returns a fault, so try the call and read the error.
 
 - **Sites** — GetUserSites, AddSite, VerifySite, RemoveSite, GetSiteMoves, SubmitSiteMove
 - **Roles** — GetSiteRoles, AddSiteRoles, RemoveSiteRole
