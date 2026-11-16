@@ -136,6 +136,7 @@ import { buildRequest, callApi, unwrap, getApiKey, API_KEY_ENV } from "../dist/c
   assert.equal(qs.get("endDate"), "2026-10-31T22:59:59.000Z");
   assert.throws(() => call({ startDate: "2026-02-30" }), /--startDate must be an ISO 8601 date/);
   assert.throws(() => call({ endDate: "10/31/2026" }), /--endDate must be an ISO 8601 date/);
+  assert.throws(() => call({ startDate: "2026-10-01T10:00" }), /--startDate must be an ISO 8601 date/);
 }
 
 // 3. envelope unwraps; --raw keeps it (mock fetch).

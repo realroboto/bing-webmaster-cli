@@ -122,13 +122,14 @@ function enumOf(type: EnumName): Coercer {
   };
 }
 
-// ECMAScript date-time string format, full date required: these strings
-// parse the same on every engine. Date-only = UTC; no offset = local time.
+// ECMAScript date-time string format: Date.parse reads it the same on every
+// engine. Date-only means UTC. A time needs Z or an offset, so the request
+// does not change with the machine time zone.
 const ISO_8601 =
-  /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})?)?$/;
+  /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2}))?$/;
 
-// One value, two wire forms: a JSON body takes /Date(ms)/ (official
-// examples); a GET query takes UTC ISO 8601 (live-verified on GetKeyword, #12).
+// JSON.stringify calls toJSON: the body gets /Date(ms)/ (official examples).
+// appendParams calls String: the GET query gets UTC ISO 8601 (verified live, #12).
 const dateTime: Coercer = (value) => {
   const s = String(single(value));
   const ms = ISO_8601.test(s) ? Date.parse(s) : NaN;
@@ -138,7 +139,9 @@ const dateTime: Coercer = (value) => {
     Number.isNaN(ms) ||
     new Date(Date.parse(day)).toISOString().slice(0, 10) !== day
   ) {
-    throw new Error("an ISO 8601 date (2026-01-31 or 2026-01-31T12:00:00Z)");
+    throw new Error(
+      "an ISO 8601 date (2026-01-31, or 2026-01-31T12:00:00 plus Z or ±hh:mm)",
+    );
   }
   const iso = new Date(ms).toISOString();
   return { toJSON: () => `/Date(${ms})/`, toString: () => iso };
