@@ -49,6 +49,14 @@ pnpm test      # tsc build + smoke test
 pnpm lint      # biome check: format, lint, import order
 ```
 
+Release: bump `version` and `CHANGELOG.md`, merge to `main`, then push tag `v<version>`:
+
+```sh
+git tag -a v0.2.0 -m "chore: release v0.2.0" && git push origin v0.2.0
+```
+
+`.github/workflows/publish.yml` checks tag = `version`, runs test and lint, then `npm publish` through npm trusted publishing (OIDC). No npm token exists.
+
 ## Agent skills
 
 ### Issue tracker

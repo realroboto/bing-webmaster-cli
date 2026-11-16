@@ -30,6 +30,7 @@ API audit (#7). Every flag now follows its declared type in `src/contract.ts`. S
 - Verb comes from the param types: a `Get*` with a DataContract param POSTs (`GetChildrenUrlInfo`).
 - Each request times out after 60 s; the error names the method.
 - Live verification matrix, 62 methods on 2026-11-16: 40 works, 11 empty, 3 fault (upstream 404), 8 not run.
+- npm provenance. GitHub Actions builds and publishes each release through npm trusted publishing (OIDC).
 
 ### Fixed
 
