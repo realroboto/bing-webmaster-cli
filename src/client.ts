@@ -12,6 +12,8 @@ export const API_KEY_ENV = "BING_WEBMASTER_API_KEY";
 
 /** Raw flag values as the CLI collects them; buildRequest coerces by declared type. */
 export type Params = Record<string, string | number | boolean | string[]>;
+/** Params after coercion: wire values keyed in API casing. */
+type Wire = Record<string, unknown>;
 
 const METHOD_LOOKUP = new Map(
   Object.keys(API).map((m) => [m.toLowerCase(), m as ApiMethod])
@@ -37,13 +39,7 @@ export function getApiKey(env: NodeJS.ProcessEnv = process.env): string {
 // the API answers 405 to GET and only accepts POST with a JSON body.
 const CHILDREN_URL_INFO = "GetChildrenUrlInfo";
 
-const FILTER_FIELDS = [
-  "CrawlDateFilter",
-  "DiscoveredDateFilter",
-  "DocFlagsFilters",
-  "HttpCodeFilters",
-] as const;
-const FILTER_LOOKUP = new Map(FILTER_FIELDS.map((f) => [f.toLowerCase(), f]));
+const FILTER_FIELDS = Object.keys(CONTRACTS.FilterProperties.fields);
 
 export function verbOf(method: ApiMethod): "GET" | "POST" {
   return method.startsWith("Get") && method !== CHILDREN_URL_INFO
@@ -55,7 +51,8 @@ export function verbOf(method: ApiMethod): "GET" | "POST" {
 // whose message completes "--flag must be ...".
 type Coercer = (value: Params[string]) => unknown;
 
-const raw: Coercer = (value) => value;
+// A bare flag goes out as the string "true", as before typed dispatch.
+const asIs: Coercer = (value) => (value === true ? "true" : value);
 
 function single(value: Params[string]): string | number | boolean {
   if (Array.isArray(value)) throw new Error("given once, not repeated");
@@ -79,9 +76,11 @@ const bool: Coercer = (value) => {
 const int =
   (min: number, max: number): Coercer =>
   (value) => {
-    const v = single(value);
+    // A repeated flag (array) fails the pattern too.
     const n =
-      typeof v === "number" || /^-?\d+$/.test(String(v)) ? Number(v) : NaN;
+      typeof value === "number" || /^-?\d+$/.test(String(value))
+        ? Number(value)
+        : NaN;
     if (!Number.isInteger(n) || n < min || n > max) {
       throw new Error(`a single integer in ${min}..${max}`);
     }
@@ -102,9 +101,9 @@ const list =
       .map((v) => item(v));
   };
 
-// Enums and DataContracts go through raw until typed (#11).
+// shortcut: enums and DataContracts go out as given, unvalidated; type them in #11.
 const passThrough = <K extends string>(o: Record<K, unknown>) =>
-  Object.fromEntries(Object.keys(o).map((k) => [k, raw])) as Record<
+  Object.fromEntries(Object.keys(o).map((k) => [k, asIs])) as Record<
     K,
     Coercer
   >;
@@ -116,7 +115,7 @@ const BUILTIN: Record<BuiltinType, Coercer> = {
   ushort: int(0, 65535),
   int: int(-2147483648, 2147483647),
   "byte[]": list(int(0, 255)),
-  DateTime: raw, // ISO 8601 parsing lands with #12
+  DateTime: asIs, // shortcut: sent as given, unvalidated; parse ISO 8601 in #12
   "List<string>": list(str),
 };
 
@@ -133,7 +132,7 @@ interface Flag {
 }
 
 /** Flags a method accepts, keyed lowercase: its params, plus the fields of its
- * DataContract params as flat flags (sent raw until #11). */
+ * DataContract params as flat flags. */
 function flagsOf(method: ApiMethod): Map<string, Flag> {
   const flags = new Map<string, Flag>();
   for (const [name, type] of Object.entries(API[method]) as [
@@ -144,7 +143,10 @@ function flagsOf(method: ApiMethod): Map<string, Flag> {
     if (type in CONTRACTS) {
       const { fields } = CONTRACTS[type as keyof typeof CONTRACTS];
       for (const field of Object.keys(fields)) {
-        flags.set(field.toLowerCase(), { name: field, coerce: raw });
+        // shortcut: fields go top-level as given, except GetChildrenUrlInfo's
+        // integer filters; fold every DataContract by field type in #11.
+        const coerce = method === CHILDREN_URL_INFO ? int(0, 2147483647) : asIs;
+        flags.set(field.toLowerCase(), { name: field, coerce });
       }
     }
   }
@@ -154,7 +156,7 @@ function flagsOf(method: ApiMethod): Map<string, Flag> {
 /** Match flags to the method's params (case-insensitive), coerce each by its
  * declared type, and key the result in API casing. Throws before any network
  * call on an unknown flag, a bad value, or a repeated scalar. */
-function coerceParams(method: ApiMethod, params: Params): Params {
+function coerceParams(method: ApiMethod, params: Params): Wire {
   const flags = flagsOf(method);
   const names = [...flags.values()].map((f) => `--${f.name}`).join(", ");
   const valid = `Valid params for ${method}: ${names || "none"}.`;
@@ -169,13 +171,13 @@ function coerceParams(method: ApiMethod, params: Params): Params {
     grouped.set(flag, group);
   }
 
-  const out: Params = {};
+  const out: Wire = {};
   for (const [flag, { key, values }] of grouped) {
     const value = values.length === 1
         ? values[0]
         : values.flatMap((v): string[] => (Array.isArray(v) ? v : [String(v)]));
     try {
-      out[flag.name] = flag.coerce(value) as Params[string];
+      out[flag.name] = flag.coerce(value);
     } catch (err) {
       const why = err instanceof Error ? err.message : String(err);
       throw new Error(`--${key} must be ${why}, got: ${value}. ${valid}`);
@@ -184,38 +186,23 @@ function coerceParams(method: ApiMethod, params: Params): Params {
   return out;
 }
 
-/**
- * Fold the flat CLI flags into the body GetChildrenUrlInfo expects: filter
- * flags move inside `filterProperties` (defaulting to 0 = "any"), and `page`
- * plus the filters go as numbers — the DataContract rejects strings.
- */
-function toInt(key: string, value: Params[string]): number {
-  const n = Number(value);
-  // Catches both typos and the CLI's comma-join array syntax, which Number()
-  // would otherwise turn into NaN and JSON.stringify into a silent null.
-  if (!Number.isFinite(n)) {
-    throw new Error(`--${key} must be a single integer, got: ${value}`);
-  }
-  return n;
-}
-
-function childrenUrlInfoBody(params: Params): Record<string, unknown> {
-  const filterProperties: Record<string, unknown> = {
+/** Fold the coerced flags into the body GetChildrenUrlInfo expects: filter
+ * fields move inside `filterProperties` (defaulting to 0 = "any"). */
+function childrenUrlInfoBody(params: Wire): Wire {
+  const filterProperties: Wire = {
     __type: "FilterProperties:#Microsoft.Bing.Webmaster.Api",
   };
   for (const field of FILTER_FIELDS) filterProperties[field] = 0;
 
-  const body: Record<string, unknown> = { filterProperties };
+  const body: Wire = { filterProperties };
   for (const [key, value] of Object.entries(params)) {
-    const field = FILTER_LOOKUP.get(key.toLowerCase());
-    if (field) filterProperties[field] = toInt(key, value);
-    else if (key.toLowerCase() === "page") body.page = toInt(key, value);
+    if (FILTER_FIELDS.includes(key)) filterProperties[key] = value;
     else body[key] = value;
   }
   return body;
 }
 
-function appendParams(qs: URLSearchParams, params: Params): void {
+function appendParams(qs: URLSearchParams, params: Wire): void {
   for (const [key, value] of Object.entries(params)) {
     if (Array.isArray(value)) {
       for (const v of value) qs.append(key, String(v));
@@ -241,12 +228,12 @@ export function buildRequest(
     throw new Error(`Unknown method: ${methodInput}`);
   }
 
-  params = coerceParams(method, params);
+  const wire = coerceParams(method, params);
   const query = new URLSearchParams();
   query.set("apikey", apiKey);
 
   const get = verbOf(method) === "GET";
-  if (get) appendParams(query, params);
+  if (get) appendParams(query, wire);
   const url = `${BASE_URL}${method}?${query.toString()}`;
 
   const init: RequestInit = get
@@ -255,7 +242,7 @@ export function buildRequest(
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          method === CHILDREN_URL_INFO ? childrenUrlInfoBody(params) : params
+          method === CHILDREN_URL_INFO ? childrenUrlInfoBody(wire) : wire
         ),
       };
 

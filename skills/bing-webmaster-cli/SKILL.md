@@ -35,7 +35,7 @@ bwt <Method> [--param value ...] [--raw]
 - Flags: `--name value` or `--name=value`; a bare flag means `true`. Names are case-insensitive; API casing is sent.
 - Values follow the param type from `bwt schema`: `bool` → `true`/`false`; `int`/`short`/`ushort` → integer; `string` keeps commas (`--q "a,b"` is one string).
 - List params (`List<string>`): repeat the flag (`--urlList a --urlList b`) or comma-join (`--urlList a,b`).
-- Unknown flag, bad value, or a repeated non-list flag → exit 1 before any request; the error names the flag and lists the method's valid params.
+- Unknown flag, bad value, or repeated non-list flag → exit 1 before any request. The error names the flag and lists valid params.
 - Output is the unwrapped `.d` payload, ready to pipe into `jq`. `--raw` keeps the full `{"d":...}` envelope.
 
 ## Common calls

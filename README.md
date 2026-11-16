@@ -27,8 +27,9 @@ bwt --help                            # usage + methods
 - Exception: `GetChildrenUrlInfo` is POST (its `FilterProperties` argument can't ride a query string). Pass filters as flat flags — `--httpCodeFilters`, `--crawlDateFilter`, `--discoveredDateFilter`, `--docFlagsFilters` — one integer each, no comma-join. They are folded into the body; `0` = any.
 - Output is the unwrapped JSON payload. `--raw` prints the full `{"d": ...}` envelope.
 - Flags: `--name value` or `--name=value`; a bare flag means `true`. Names are case-insensitive; API casing is sent.
-- Values are coerced by declared type: `bool` and integers go as JSON literals, `string` keeps commas, list params (`List<string>`) take a repeated flag or a comma-join.
-- An unknown flag, a bad value, or a repeated non-list flag fails before any request, naming the flag and listing valid params.
+- Values follow the declared type. `bool` and integers go as JSON literals. `string` keeps commas.
+- List params (`List<string>`): repeat the flag or comma-join.
+- Unknown flag, bad value, or repeated non-list flag: fails before any request. The error names the flag and lists valid params.
 - `bwt schema` prints `{ "<Method>": { "verb": "GET"|"POST", "params": { "<name>": "<.NET type>" } } }`.
 
 Covers all 62 API methods. See `SPEC.md` for the full inventory and design.

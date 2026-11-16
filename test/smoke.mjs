@@ -59,8 +59,8 @@ import { buildRequest, callApi, unwrap, getApiKey, API_KEY_ENV } from "../dist/c
 // sending null (Number([..]) → NaN → null in JSON).
 {
   const call = (params) => () => buildRequest("GetChildrenUrlInfo", params, "KEY");
-  assert.throws(call({ httpCodeFilters: "abc" }), /--httpCodeFilters must be a single integer/i);
-  assert.throws(call({ httpCodeFilters: ["4", "5"] }), /--httpCodeFilters must be a single integer/i);
+  assert.throws(call({ httpCodeFilters: "abc" }), /--httpCodeFilters must be a single integer/);
+  assert.throws(call({ httpCodeFilters: ["4", "5"] }), /--httpCodeFilters must be a single integer/);
   assert.throws(call({ page: "x" }), /--page must be a single integer/);
 }
 

@@ -22,7 +22,7 @@ function parseArgv(argv: string[]): Parsed {
   const add = (key: string, value: string | true) => {
     const prev = params[key];
     if (prev === undefined) params[key] = value;
-    else params[key] = ([] as unknown[]).concat(prev, value).map(String);
+    else params[key] = [...(Array.isArray(prev) ? prev : [String(prev)]), String(value)];
   };
 
   for (let i = 0; i < argv.length; i++) {
