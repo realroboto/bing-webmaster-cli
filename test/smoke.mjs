@@ -109,21 +109,34 @@ import { buildRequest, callApi, unwrap, getApiKey, API_KEY_ENV } from "../dist/c
 }
 
 // 2j. DataContract fields as flat flags fold into one nested object, __type
-// first, fields in contract order, omitted fields omitted.
+// first, fields in contract order, omitted fields omitted. ISO 8601 date → /Date(ms)/.
 {
-  const { request } = buildRequest("addblockedurl", { url: "https://x.com/u1", requesttype: "FullRemoval", siteUrl: "https://x.com", EntityType: "0" }, "KEY");
+  const { request } = buildRequest("addblockedurl", { url: "https://x.com/u1", requesttype: "FullRemoval", siteUrl: "https://x.com", EntityType: "0", date: "2026-10-01T02:00:00+02:00" }, "KEY");
   const body = JSON.parse(request.init.body);
   assert.deepEqual(body, {
     siteUrl: "https://x.com",
     blockedUrl: {
       __type: "BlockedUrl:#Microsoft.Bing.Webmaster.Api",
+      Date: "/Date(1790812800000)/",
       EntityType: 0,
       RequestType: 1,
       Url: "https://x.com/u1",
     },
   });
-  assert.deepEqual(Object.keys(body.blockedUrl), ["__type", "EntityType", "RequestType", "Url"]);
+  assert.deepEqual(Object.keys(body.blockedUrl), ["__type", "Date", "EntityType", "RequestType", "Url"]);
   assert.throws(() => buildRequest("AddBlockedUrl", { blockedUrl: "x" }, "KEY"), /Unknown flag --blockedUrl/);
+}
+
+// 2k. GET date: ISO 8601 in, UTC ISO 8601 in the query (live-verified on
+// GetKeyword, #12). A bad date throws before network, naming the flag.
+{
+  const call = (dates) => buildRequest("GetKeyword", { q: "books", country: "us", language: "en-US", ...dates }, "KEY");
+  const qs = new URL(call({ startDate: "2026-10-01", endDate: "2026-10-31T23:59:59+01:00" }).request.url).searchParams;
+  assert.equal(qs.get("startDate"), "2026-10-01T00:00:00.000Z");
+  assert.equal(qs.get("endDate"), "2026-10-31T22:59:59.000Z");
+  assert.throws(() => call({ startDate: "2026-02-30" }), /--startDate must be an ISO 8601 date/);
+  assert.throws(() => call({ endDate: "10/31/2026" }), /--endDate must be an ISO 8601 date/);
+  assert.throws(() => call({ startDate: "2026-10-01T10:00" }), /--startDate must be an ISO 8601 date/);
 }
 
 // 3. envelope unwraps; --raw keeps it (mock fetch).

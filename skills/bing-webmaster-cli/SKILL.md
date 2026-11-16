@@ -36,6 +36,7 @@ bwt <Method> [--param value ...] [--raw]
   - `--docFlagsFilters`: IsBlockedByRobotsTxt=1, IsMalware=2.
 - Flags: `--name value` or `--name=value`; a bare flag means `true`. Names are case-insensitive; API casing is sent.
 - Values follow the param type from `bwt schema`: `bool` → `true`/`false`; `int`/`short`/`ushort` → integer; `string` keeps commas (`--q "a,b"` is one string).
+- `DateTime` flags (`--startDate`, `--endDate`, DataContract `--Date`): ISO 8601 (`2026-01-31`, `2026-01-31T12:00:00Z`). Date-only = UTC midnight; a time needs `Z` or an offset. bwt sends `/Date(ms)/` in a JSON body, UTC ISO 8601 in a GET query.
 - List params (`List<string>`, `byte[]`): repeat the flag (`--urlList a --urlList b`) or comma-join (`--urlList a,b`).
 - Unknown flag, bad value, or repeated non-list flag → exit 1 before any request. The error names the flag and lists valid params.
 - Output is the unwrapped `.d` payload, ready to pipe into `jq`. `--raw` keeps the full `{"d":...}` envelope.

@@ -30,6 +30,7 @@ bwt --help                            # usage + methods
 - Values follow the declared type. `bool` and integers go as JSON literals. `string` keeps commas.
 - List params (`List<string>`, `byte[]`): repeat the flag or comma-join.
 - Enum params: member name (case-insensitive) or its number; sent as the number. `[Flags]` enums also take an OR of members as a number.
+- `DateTime` params: ISO 8601 (`2026-01-31`, `2026-01-31T12:00:00Z`, `2026-01-31T12:00:00+02:00`). Date-only means UTC midnight. A time needs `Z` or an offset. JSON body gets `/Date(<ms>)/`. GET query gets UTC ISO 8601 (`2026-01-31T00:00:00.000Z`).
 - DataContract params: pass each field as a flat flag (`--Url`, `--EntityType`). They fold into one nested object, `__type` first. Omitted fields stay omitted; `FilterProperties` fields default to `0` (Any). The DataContract param itself is not a flag.
 - Unknown flag, bad value, or repeated non-list flag: fails before any request. The error names the flag and lists valid params.
 - `bwt schema` prints `{ "<Method>": { "verb": "GET"|"POST", "params": { "<name>": <type> } } }`. `<type>` is a .NET type string, `{ "enum", "flags"?, "members": { name: number } }`, or `{ "contract", "__type", "fields": { name: <type> } }`.

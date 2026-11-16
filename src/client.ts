@@ -53,9 +53,6 @@ export function verbOf(method: ApiMethod): "GET" | "POST" {
 // whose message completes "--flag must be ...".
 type Coercer = (value: Params[string]) => unknown;
 
-// A bare flag goes out as the string "true", as before typed dispatch.
-const asIs: Coercer = (value) => (value === true ? "true" : value);
-
 function single(value: Params[string]): string | number | boolean {
   if (Array.isArray(value)) throw new Error("given once, not repeated");
   return value;
@@ -125,6 +122,31 @@ function enumOf(type: EnumName): Coercer {
   };
 }
 
+// ECMAScript date-time string format: Date.parse reads it the same on every
+// engine. Date-only means UTC. A time needs Z or an offset, so the request
+// does not change with the machine time zone.
+const ISO_8601 =
+  /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2}))?$/;
+
+// JSON.stringify calls toJSON: the body gets /Date(ms)/ (official examples).
+// appendParams calls String: the GET query gets UTC ISO 8601 (verified live, #12).
+const dateTime: Coercer = (value) => {
+  const s = String(single(value));
+  const ms = ISO_8601.test(s) ? Date.parse(s) : NaN;
+  // Date.parse rolls 2026-02-30 over to March 2: the day must round-trip.
+  const day = s.slice(0, 10);
+  if (
+    Number.isNaN(ms) ||
+    new Date(Date.parse(day)).toISOString().slice(0, 10) !== day
+  ) {
+    throw new Error(
+      "an ISO 8601 date (2026-01-31, or 2026-01-31T12:00:00 plus Z or ±hh:mm)",
+    );
+  }
+  const iso = new Date(ms).toISOString();
+  return { toJSON: () => `/Date(${ms})/`, toString: () => iso };
+};
+
 const BUILTIN: Record<BuiltinType, Coercer> = {
   string: str,
   bool,
@@ -132,7 +154,7 @@ const BUILTIN: Record<BuiltinType, Coercer> = {
   ushort: int(0, 65535),
   int: int(-2147483648, 2147483647),
   "byte[]": list(int(0, 255)),
-  DateTime: asIs, // shortcut: sent unvalidated, parse ISO 8601 in #12
+  DateTime: dateTime,
   "List<string>": list(str),
 };
 
