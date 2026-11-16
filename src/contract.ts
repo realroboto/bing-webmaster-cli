@@ -5,6 +5,7 @@
 // Extracted by hand 2026-11-15. Names and types are verbatim C# from those pages, except BlockReason (third-party, see below).
 // Re-audit repeats the extraction.
 // Doc conflicts and gaps: see issue #8.
+// Live status per method: docs/verification-matrix.md.
 
 /** Built-in C#/BCL types used by method params and DataContract fields. */
 export type BuiltinType =
@@ -79,7 +80,7 @@ export const CONTRACTS = {
 			Url: "string",
 		},
 	},
-	// shortcut: fields follow the CrawlSettings page, but the SaveCrawlSettings example sends AjaxEnabled. Settle by live write-back (#14).
+	// Fields follow the CrawlSettings page; live GetCrawlSettings returns exactly these (#13). The SaveCrawlSettings example's AjaxEnabled is stale.
 	CrawlSettings: {
 		__type: "CrawlSettings:#Microsoft.Bing.Webmaster.Api",
 		fields: {

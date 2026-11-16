@@ -65,7 +65,7 @@ Most take `--siteUrl`. `bwt schema` prints every method with its verb, params, .
 - **Links** — GetLinkCounts, GetUrlLinks, GetConnectedPages, AddConnectedPage
 - **Blocks & deep links** — GetBlockedUrls, AddBlockedUrl, RemoveBlockedUrl, GetActivePagePreviewBlocks, AddPagePreviewBlock, RemovePagePreviewBlock, GetDeepLinkBlocks, AddDeepLinkBlock, RemoveDeepLinkBlock, GetDeepLinkAlgoUrls, GetDeepLink, UpdateDeepLink
 - **URL info** — GetUrlInfo, GetUrlTrafficInfo, GetChildrenUrlInfo, GetChildrenUrlTrafficInfo
-  All four answer 200 (checked 2026-11-08 on two sites; earlier `400 UnknownError` outage: issue #3). Year-1 dates (`/Date(-62135596800000)/`) = Bing has no crawl record. `HttpStatus` reads 0 even on crawled pages. `GetUrlTrafficInfo` gave 0 for a page with clicks; use `GetPageStats` for traffic.
+  All four answer 200 (checked 2026-11-16; earlier `400 UnknownError` outage: issue #3). Year-1 dates (`/Date(-62135596800000)/`) = Bing has no crawl record. `HttpStatus` reads 0 even on crawled pages. `GetUrlTrafficInfo` gave 0 for a page with clicks; use `GetPageStats` for traffic.
 - **Feeds & sitemaps** — GetFeeds, GetFeedDetails, SubmitFeed, RemoveFeed
 - **Query parameters** — GetQueryParameters, AddQueryParameter, EnableDisableQueryParameter, RemoveQueryParameter
 - **Country/region targeting** — GetCountryRegionSettings, AddCountryRegionSettings, RemoveCountryRegionSettings
@@ -77,3 +77,5 @@ Most take `--siteUrl`. `bwt schema` prints every method with its verb, params, .
 ## Errors
 
 Non-200 → thrown as `Bing Webmaster API error <status>: <Message> (ErrorCode <n>)`, exit 1. The fault (e.g. `InvalidApiKey`, `ThrottleUser`) is top-level, not in the `.d` envelope.
+
+404 with an empty body = the JSON endpoint does not serve the method: GetSiteMoves, and the obsolete GetDeepLinkAlgoUrls and GetDeepLink (checked 2026-11-16).
