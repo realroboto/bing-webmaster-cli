@@ -1,63 +1,99 @@
 #!/usr/bin/env node
-import { API, type ApiMethod, CONTRACTS, ENUMS, FLAG_ENUMS, type TypeName } from "./contract.js";
-import { callApi, unwrap, getApiKey, verbOf, API_KEY_ENV, type Params } from "./client.js";
+import {
+	API_KEY_ENV,
+	callApi,
+	getApiKey,
+	type Params,
+	unwrap,
+	verbOf,
+} from "./client.js";
+import {
+	API,
+	type ApiMethod,
+	CONTRACTS,
+	ENUMS,
+	FLAG_ENUMS,
+	type TypeName,
+} from "./contract.js";
 
 // Hand-rolled arg parse: method params are dynamic, so parseArgs (needs a
 // per-option config) can't type them. --raw/--help are the CLI's own switches.
 // The parser only collects: --k v / --k=v → string, repeated flag → array,
 // bare flag → true. buildRequest coerces each value by its declared type.
 interface Parsed {
-  positional?: string;
-  params: Params;
-  raw: boolean;
-  help: boolean;
+	positional?: string;
+	params: Params;
+	raw: boolean;
+	help: boolean;
 }
 
 function parseArgv(argv: string[]): Parsed {
-  const params: Params = {};
-  let positional: string | undefined;
-  let raw = false;
-  let help = false;
+	const params: Params = {};
+	let positional: string | undefined;
+	let raw = false;
+	let help = false;
 
-  const add = (key: string, value: string | true) => {
-    const prev = params[key];
-    if (prev === undefined) params[key] = value;
-    else params[key] = [...(Array.isArray(prev) ? prev : [String(prev)]), String(value)];
-  };
+	const add = (key: string, value: string | true) => {
+		const prev = params[key];
+		if (prev === undefined) params[key] = value;
+		else
+			params[key] = [
+				...(Array.isArray(prev) ? prev : [String(prev)]),
+				String(value),
+			];
+	};
 
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === "--raw") { raw = true; continue; }
-    if (a === "--help") { help = true; continue; }
-    if (a.startsWith("--")) {
-      const body = a.slice(2);
-      const eq = body.indexOf("=");
-      if (eq >= 0) { add(body.slice(0, eq), body.slice(eq + 1)); continue; }
-      const next = argv[i + 1];
-      if (next !== undefined && !next.startsWith("--")) { add(body, next); i++; }
-      else add(body, true);
-      continue;
-    }
-    if (positional === undefined) positional = a;
-  }
+	for (let i = 0; i < argv.length; i++) {
+		const a = argv[i];
+		if (a === "--raw") {
+			raw = true;
+			continue;
+		}
+		if (a === "--help") {
+			help = true;
+			continue;
+		}
+		if (a.startsWith("--")) {
+			const body = a.slice(2);
+			const eq = body.indexOf("=");
+			if (eq >= 0) {
+				add(body.slice(0, eq), body.slice(eq + 1));
+				continue;
+			}
+			const next = argv[i + 1];
+			if (next !== undefined && !next.startsWith("--")) {
+				add(body, next);
+				i++;
+			} else add(body, true);
+			continue;
+		}
+		if (positional === undefined) positional = a;
+	}
 
-  return { positional, params, raw, help };
+	return { positional, params, raw, help };
 }
 
 const METHODS = Object.keys(API) as ApiMethod[];
 
 /** Schema view of a type: enums list members, DataContracts list fields. */
 function describe(type: TypeName): unknown {
-  if (type in ENUMS) {
-    const e = type as keyof typeof ENUMS;
-    return { enum: e, ...(FLAG_ENUMS.includes(e) && { flags: true }), members: ENUMS[e] };
-  }
-  if (type in CONTRACTS) {
-    const { __type, fields } = CONTRACTS[type as keyof typeof CONTRACTS];
-    const described = Object.entries<TypeName>(fields).map(([f, t]) => [f, describe(t)]);
-    return { contract: type, __type, fields: Object.fromEntries(described) };
-  }
-  return type;
+	if (type in ENUMS) {
+		const e = type as keyof typeof ENUMS;
+		return {
+			enum: e,
+			...(FLAG_ENUMS.includes(e) && { flags: true }),
+			members: ENUMS[e],
+		};
+	}
+	if (type in CONTRACTS) {
+		const { __type, fields } = CONTRACTS[type as keyof typeof CONTRACTS];
+		const described = Object.entries<TypeName>(fields).map(([f, t]) => [
+			f,
+			describe(t),
+		]);
+		return { contract: type, __type, fields: Object.fromEntries(described) };
+	}
+	return type;
 }
 
 const USAGE = `bwt — Unofficial Bing Webmaster Tools CLI
@@ -84,31 +120,34 @@ Methods:
 ${METHODS.map((m) => `  ${m}`).join("\n")}`;
 
 async function main(argv: string[]): Promise<void> {
-  const { positional, params, raw, help } = parseArgv(argv);
+	const { positional, params, raw, help } = parseArgv(argv);
 
-  if (help || positional === undefined) {
-    console.log(USAGE);
-    return;
-  }
+	if (help || positional === undefined) {
+		console.log(USAGE);
+		return;
+	}
 
-  if (positional.toLowerCase() === "schema") {
-    const schema = Object.fromEntries(
-      METHODS.map((m) => {
-        const params = Object.entries<TypeName>(API[m]).map(([p, t]) => [p, describe(t)]);
-        return [m, { verb: verbOf(m), params: Object.fromEntries(params) }];
-      })
-    );
-    console.log(JSON.stringify(schema, null, 2));
-    return;
-  }
+	if (positional.toLowerCase() === "schema") {
+		const schema = Object.fromEntries(
+			METHODS.map((m) => {
+				const params = Object.entries<TypeName>(API[m]).map(([p, t]) => [
+					p,
+					describe(t),
+				]);
+				return [m, { verb: verbOf(m), params: Object.fromEntries(params) }];
+			}),
+		);
+		console.log(JSON.stringify(schema, null, 2));
+		return;
+	}
 
-  getApiKey(); // fail fast with a clear message before hitting the network
-  const envelope = await callApi(positional, params);
-  const out = raw ? envelope : unwrap(envelope);
-  console.log(JSON.stringify(out, null, 2));
+	getApiKey(); // fail fast with a clear message before hitting the network
+	const envelope = await callApi(positional, params);
+	const out = raw ? envelope : unwrap(envelope);
+	console.log(JSON.stringify(out, null, 2));
 }
 
 main(process.argv.slice(2)).catch((err) => {
-  console.error(err instanceof Error ? err.message : String(err));
-  process.exit(1);
+	console.error(err instanceof Error ? err.message : String(err));
+	process.exit(1);
 });

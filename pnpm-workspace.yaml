@@ -1,3 +1,3 @@
 # Owner rule: Biome always at latest, so skip the release-age quarantine for it.
 minimumReleaseAgeExclude:
-  - '@biomejs/*'
+  - "@biomejs/*"
