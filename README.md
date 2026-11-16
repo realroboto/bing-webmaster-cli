@@ -26,6 +26,8 @@ bwt --help                            # usage + methods
 - Method name is case-insensitive; the API is called with canonical casing.
 - `Get*` → GET, everything else → POST. A `Get*` with a DataContract param (`GetChildrenUrlInfo`) is POST: a DataContract can't ride a query string. `apikey` is always sent in the query string.
 - Output is the unwrapped JSON payload. `--raw` prints the full `{"d": ...}` envelope.
+- Each request times out after 60 s; the error names the method. Errors go to stderr, exit code 1.
+- The key comes only from `BING_WEBMASTER_API_KEY`. `--apikey` is rejected.
 - Flags: `--name value` or `--name=value`; a bare flag means `true`. Names are case-insensitive; API casing is sent.
 - Values follow the declared type. `bool` and integers go as JSON literals. `string` keeps commas.
 - List params (`List<string>`, `byte[]`): repeat the flag or comma-join.
@@ -44,7 +46,7 @@ Skipped (add on demand): OAuth (apikey only), table/CSV output, disk cache, retr
 ```sh
 pnpm install   # Node >= 26, pnpm 12
 pnpm test      # tsc build + smoke test
-pnpm lint      # Biome
+pnpm lint      # biome check: format, lint, import order
 ```
 
 ## Agent skills

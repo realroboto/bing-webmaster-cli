@@ -42,7 +42,7 @@ A self-maintained, zero-dependency Node CLI — package `bing-webmaster-cli`, bi
 ## Implementation Decisions
 
 - **Two repos.** New standalone repo `bing-webmaster-cli` (primary deliverable). Separate follow-up swap in the container-build repo (`vmCODE`), gated on the npm publish.
-- **Stack.** Node ≥ 26, TypeScript 7 (strict), ESM, pnpm 12, Biome lint. Zero runtime dependencies: built-in `fetch` for HTTP, hand-rolled flag parser (method params are dynamic; `parseArgs` cannot type them).
+- **Stack.** Node ≥ 26, TypeScript 7 (strict), ESM, pnpm 12, Biome check (format, lint, import order). Zero runtime dependencies: built-in `fetch` for HTTP, hand-rolled flag parser (method params are dynamic; `parseArgs` cannot type them).
 - **Data-driven, not per-method handlers.** The contract module `src/contract.ts` (`API`) lists all 62 methods verbatim (API casing) with their params and .NET types. One generic dispatcher builds and issues the request. No hand-written handler per method.
 - **The seam — `buildRequest(method, params, apiKey)`** (pure). Given a method name, parsed flags, and API key, returns `{ method, request: { url, init } }`: canonical method name plus `fetch` arguments (`init.method` `GET`|`POST`, `init.body` only on POST). This is the single, highest test seam. `fetch` and output-printing sit above it.
 - **Transport (verified):**
@@ -51,10 +51,12 @@ A self-maintained, zero-dependency Node CLI — package `bing-webmaster-cli`, bi
   - Format: JSON via the `/json/` path segment — there is no `format=json` query param.
   - Verb: method name prefix `Get` → GET (params in query string); otherwise → POST (params in JSON body, `apikey` still in the query string). A `Get*` with a DataContract param is POST: WCF reads only scalars from a query string. Today only `GetChildrenUrlInfo` (`FilterProperties`; GET answers 405, #2). Its sibling `GetChildrenUrlTrafficInfo` has no DataContract and stays GET.
   - Response envelope: `{"d": <payload>}`; unwrap `.d` before printing unless `--raw`.
+  - Timeout: 60 s per request, headers and body (`AbortSignal.timeout`; undici default is 300 s each). The error names the method.
+  - Faults: top-level `{ErrorCode, Message}` → `Message (ErrorCode N)`; without `ErrorCode`, `Message` only. Exit via `process.exitCode = 1`, so piped stderr is never cut.
 - **Method casing.** Accept the method argument case-insensitively; call the API with the exact table casing.
 - **Flags.** The CLI parser only collects: `--k v` / `--k=v` → string, repeated flag → array, bare flag → `true`. `buildRequest` matches flags case-insensitively, sends API casing, and coerces by declared type: `bool` and integers → JSON literals, `string` keeps commas, list params split on commas (repeated flags or `--urlList a,b`), enums take member name or number and send the number. DataContract fields are flat flags, folded into one nested object per param, `__type` first; omitted fields stay omitted; `FilterProperties` defaults to `0`. Unknown flag, bad value, or repeated scalar → throw before network, naming the flag and listing valid params.
 - **Dates.** `DateTime` flags take ISO 8601: date-only (UTC midnight), or date-time with `Z` or an offset. JSON body: `/Date(<ms>)/`, as the official examples show. GET query: UTC ISO 8601. Live check (#12): GetKeyword and GetRelatedKeywords accept it. `/Date(ms)/` in a query answers 400 InvalidParameter.
-- **Key handling.** Read `BING_WEBMASTER_API_KEY` from env. Missing → exit non-zero with a message naming the variable. Never accept the key as a flag.
+- **Key handling.** Read `BING_WEBMASTER_API_KEY` from env. Missing → exit non-zero with a message naming the variable. Never accept the key as a flag: `--apikey` fails before any request, naming the variable. Read the key once per call.
 - **Commands.** `bwt <Method> [--flags]`; `bwt schema` (JSON: method → verb, params, types, enum members, DataContract fields); `bwt` / `--help` (usage + method list); global `--raw`.
 - **Coverage.** All 62 methods (59 active + 3 obsolete legacy deep-link: `GetDeepLinkAlgoUrls`, `GetDeepLink`, `UpdateDeepLink`), exceeding the MCP's 59-active baseline.
 - **Packaging.** Unscoped `bing-webmaster-cli`, bin `{ "bwt": ... }`, MIT license, README with Microsoft-disclaimer first line and no Bing logo.

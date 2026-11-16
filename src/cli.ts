@@ -104,7 +104,8 @@ Usage:
                                              members, DataContract fields) as JSON
   bwt --help                                 this help
 
-Auth: set ${API_KEY_ENV} in the environment.
+Auth: set ${API_KEY_ENV} in the environment; --apikey is rejected.
+Each request times out after 60 s; the error names the method.
 Get* methods issue GET, others POST; a Get* with a DataContract param
 POSTs. Output is the unwrapped payload (the {"d": ...} envelope); --raw
 prints the full envelope.
@@ -141,13 +142,14 @@ async function main(argv: string[]): Promise<void> {
 		return;
 	}
 
-	getApiKey(); // fail fast with a clear message before hitting the network
-	const envelope = await callApi(positional, params);
+	// Read the key once; a missing key fails with a clear message before any request.
+	const envelope = await callApi(positional, params, { apiKey: getApiKey() });
 	const out = raw ? envelope : unwrap(envelope);
 	console.log(JSON.stringify(out, null, 2));
 }
 
 main(process.argv.slice(2)).catch((err) => {
 	console.error(err instanceof Error ? err.message : String(err));
-	process.exit(1);
+	// exitCode, not exit(): process.exit can drop pending writes to a piped stderr.
+	process.exitCode = 1;
 });

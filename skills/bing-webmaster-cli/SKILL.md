@@ -17,7 +17,7 @@ Put it in the env — never pass it as a flag:
 export BING_WEBMASTER_API_KEY=<your key>
 ```
 
-Missing → exit 1 naming the var.
+Missing → exit 1 naming the var. `--apikey` → exit 1, rejected before any request.
 
 ## Call any method
 
@@ -76,6 +76,8 @@ Most take `--siteUrl`. `bwt schema` prints every method with its verb, params, .
 
 ## Errors
 
-Non-200 → thrown as `Bing Webmaster API error <status>: <Message> (ErrorCode <n>)`, exit 1. The fault (e.g. `InvalidApiKey`, `ThrottleUser`) is top-level, not in the `.d` envelope.
+Non-200 → thrown as `Bing Webmaster API error <status>: <Message> (ErrorCode <n>)`, exit 1. The fault (e.g. `InvalidApiKey`, `ThrottleUser`) is top-level, not in the `.d` envelope. A fault without `ErrorCode` prints the message only.
+
+No full answer in 60 s → `<Method> timed out after 60 s.`, exit 1.
 
 GetSiteMoves and the obsolete GetDeepLinkAlgoUrls and GetDeepLink answer 404 with an empty body, as an unknown method name does (checked 2026-11-16). Live status per method: `docs/verification-matrix.md` in the repo.

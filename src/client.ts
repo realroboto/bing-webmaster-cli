@@ -13,6 +13,9 @@ import {
 
 const BASE_URL = "https://ssl.bing.com/webmaster/api.svc/json/";
 export const API_KEY_ENV = "BING_WEBMASTER_API_KEY";
+// undici waits up to 300 s for headers and again for the body; agent shells
+// kill a command at 120 s with no message.
+const TIMEOUT_S = 60;
 
 /** Raw flag values as the CLI collects them; buildRequest coerces by declared type. */
 export type Params = Record<string, string | number | boolean | string[]>;
@@ -208,6 +211,12 @@ function coerceParams(method: ApiMethod, params: Params): Wire {
 	// --url and --URL name one param: group them so the repeat check sees both.
 	const grouped = new Map<Flag, { key: string; values: Params[string][] }>();
 	for (const [key, value] of Object.entries(params)) {
+		// The key never rides argv, and a second apikey would join the query.
+		if (key.toLowerCase() === "apikey") {
+			throw new Error(
+				`--${key} is reserved: bwt reads the key from the ${API_KEY_ENV} environment variable. Remove the flag.`,
+			);
+		}
 		const flag = flags.get(key.toLowerCase());
 		if (!flag) throw new Error(`Unknown flag --${key}. ${valid}`);
 		const group = grouped.get(flag) ?? { key, values: [] };
@@ -295,32 +304,52 @@ export interface CallOptions {
 	apiKey?: string;
 }
 
-/** Call the API and unwrap the {"d": ...} envelope. */
+/** Call the API and return the parsed response, {"d": ...} envelope kept
+ * (unwrap strips it). Throws on a non-2xx status, with the Bing fault text,
+ * and when the full answer takes longer than TIMEOUT_S. */
 export async function callApi(
 	methodInput: string,
 	params: Params = {},
 	opts: CallOptions = {},
 ): Promise<unknown> {
 	const apiKey = opts.apiKey ?? getApiKey();
-	const { request } = buildRequest(methodInput, params, apiKey);
+	const { method, request } = buildRequest(methodInput, params, apiKey);
 	const fetchImpl = opts.fetchImpl ?? globalThis.fetch;
-	const res = await fetchImpl(request.url, request.init);
-	if (!res.ok) {
-		const body = await res.text().catch(() => "");
-		throw new Error(
-			`Bing Webmaster API error ${res.status}: ${formatFault(body)}`,
-		);
+	// The signal also aborts a stalled body read (res.text, res.json).
+	const signal = AbortSignal.timeout(TIMEOUT_S * 1000);
+	try {
+		const res = await fetchImpl(request.url, { ...request.init, signal });
+		if (!res.ok) {
+			const body = await res.text().catch(() => "");
+			throw new Error(
+				`Bing Webmaster API error ${res.status}: ${formatFault(body)}`,
+			);
+		}
+		return (await res.json()) as { d?: unknown };
+	} catch (err) {
+		if (signal.aborted) {
+			throw new Error(`${method} timed out after ${TIMEOUT_S} s.`, {
+				cause: err,
+			});
+		}
+		throw err;
 	}
-	const envelope = (await res.json()) as { d?: unknown };
-	return envelope;
 }
 
 /** Bing faults are top-level {"ErrorCode":N,"Message":"..."} (not in the "d"
- * envelope). Render as "Message (ErrorCode N)"; fall back to the raw body. */
+ * envelope). Render as "Message (ErrorCode N)", or "Message" when the code is
+ * absent; fall back to the raw body. */
 function formatFault(body: string): string {
 	try {
-		const f = JSON.parse(body) as { ErrorCode?: number; Message?: string };
-		if (f.Message) return `${f.Message} (ErrorCode ${f.ErrorCode})`;
+		const f = JSON.parse(body) as {
+			ErrorCode?: number | null;
+			Message?: string;
+		};
+		if (f.Message) {
+			return f.ErrorCode == null
+				? f.Message
+				: `${f.Message} (ErrorCode ${f.ErrorCode})`;
+		}
 	} catch {}
 	return body;
 }
