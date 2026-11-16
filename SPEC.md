@@ -33,7 +33,7 @@ A self-maintained, zero-dependency Node CLI — package `bing-webmaster-cli`, bi
 18. As an agent, I want URL index info methods (single + children, with/without traffic), so that I can inspect index coverage.
 19. As an agent, I want feed/sitemap management (list, details, submit, remove), so that I can manage sitemaps.
 20. As an agent, I want URL-normalization parameter and country/region targeting methods, so that I have full parity with the API.
-21. As an agent, I want the 3 obsolete legacy deep-link methods still callable, so that the CLI exceeds the MCP's coverage and supports legacy flows.
+21. As an agent, I want the 3 obsolete legacy deep-link methods still callable, so that the CLI exceeds the MCP's coverage and supports legacy flows. _(Amended in 0.2.0: the server answers 404 to two of them. See Amendments.)_
 22. As an operator, I want the CLI published unscoped to npm as `bing-webmaster-cli`, so that it installs the same way as `ctx7` / `firecrawl-cli`.
 23. As an operator, I want the container's MCP catalog to drop the `bing-webmaster` record after the CLI ships, so that the fragile MCP no longer registers.
 24. As an operator, I want the existing `bing-webmaster-api-key` secret to keep flowing to the shell env unchanged, so that the swap needs no key re-provisioning.
@@ -58,7 +58,7 @@ A self-maintained, zero-dependency Node CLI — package `bing-webmaster-cli`, bi
 - **Dates.** `DateTime` flags take ISO 8601: date-only (UTC midnight), or date-time with `Z` or an offset. JSON body: `/Date(<ms>)/`, as the official examples show. GET query: UTC ISO 8601. Live check (#12): GetKeyword and GetRelatedKeywords accept it. `/Date(ms)/` in a query answers 400 InvalidParameter.
 - **Key handling.** Read `BING_WEBMASTER_API_KEY` from env. Missing → exit non-zero with a message naming the variable. Never accept the key as a flag: `--apikey` fails before any request, naming the variable. Read the key once per call.
 - **Commands.** `bwt <Method> [--flags]`; `bwt schema` (JSON: method → verb, params, types, enum members, DataContract fields); `bwt` / `--help` (usage + method list); global `--raw`.
-- **Coverage.** All 62 methods (59 active + 3 obsolete legacy deep-link: `GetDeepLinkAlgoUrls`, `GetDeepLink`, `UpdateDeepLink`), exceeding the MCP's 59-active baseline.
+- **Coverage.** All 62 methods (59 active + 3 obsolete legacy deep-link: `GetDeepLinkAlgoUrls`, `GetDeepLink`, `UpdateDeepLink`), exceeding the MCP's 59-active baseline. _(Amended in 0.2.0: live status per method in `docs/verification-matrix.md`. See Amendments.)_
 - **Packaging.** Unscoped `bing-webmaster-cli`, bin `{ "bwt": ... }`, MIT license, README with Microsoft-disclaimer first line and no Bing logo.
 
 ### Container swap (follow-up, after publish)
@@ -89,7 +89,7 @@ A self-maintained, zero-dependency Node CLI — package `bing-webmaster-cli`, bi
 - Disk response cache, retries, rate-limit backoff.
 - Per-command help text and required-param enforcement (the API validates and returns faults).
 - POX/XML and SOAP transports (retiring 2026-08-31; JSON-only).
-- Creating the GitHub remote — left to the operator. (npm: published, latest `0.1.1`.)
+- Creating the GitHub remote — left to the operator. (npm: published as `bing-webmaster-cli`. Releases: `CHANGELOG.md`.)
 
 ## Further Notes
 
@@ -97,3 +97,20 @@ A self-maintained, zero-dependency Node CLI — package `bing-webmaster-cli`, bi
 - Method inventory sourced from the `IWebmasterApi` .NET interface reference (the canonical exhaustive list) cross-checked against the isiahw1 MCP's call sites.
 - `bwt` bin name is free on PATH; an unrelated `bwt` npm package exists but is not installed here.
 - Trademark: nominative use, disclaimer on README line one, no logo. isiahw1 published a same-domain package without issue.
+
+## Amendments
+
+Later decisions amend the text above; they do not replace it.
+
+### 0.2.0 — API audit (#7, 2026-11-16)
+
+Spec: #7. Release note: `CHANGELOG.md`.
+
+- **Contract source.** `src/contract.ts` comes by hand from the .NET `IWebmasterApi` reference: signatures, JSON examples, DataContract and enum pages. Its header records source URL and date. No extraction script, no snapshot, no contract test: one copy cannot drift from itself. A re-audit repeats the extraction.
+- **Newer methods.** A scan of the official docs and blog found no method beyond the reference (#8). Coverage stays 62/62.
+- **Doc conflicts.** Live calls settle them, and the matrix records them. CrawlSettings follows its DataContract page (no `AjaxEnabled`). SubmitContent `dynamicServing` goes as a number; the server also takes the string. Body dates without an offset work. BlockReason names (0-2) come from the live server; Microsoft documents no BlockReason page.
+- **Live verification.** `docs/verification-matrix.md` holds one row per method on `https://ceciliobooks.com/`: method, status, date, note. The API key is masked in every recorded request. Never live: AddSite, RemoveSite, SubmitSiteMove, UpdateDeepLink. Owner approval required: AddConnectedPage, AddSiteRoles, RemoveSiteRole. VerifySite: not run (in no live list); the owner decides if it gets a live test. Mutating calls use reversible pairs or write-back of the same value. Quota calls use 1-2 URLs. Live verification is manual evidence, not part of `pnpm test`.
+- **Obsolete deep-link methods (Story 21, Coverage).** The CLI still sends all 3. GetDeepLinkAlgoUrls and GetDeepLink answer 404 with an empty body, as an unknown method name does. GetSiteMoves (not obsolete) answers the same 404. UpdateDeepLink: not run.
+- **Versioning.** `bwt schema` changed from a name array to the contract (Story 9). It shipped as minor 0.2.0: under SemVer, a minor version before 1.0 may break.
+- **Testing.** The `METHODS` length case is gone: counting the contract tests nothing.
+- **Out of scope (added).** OAuth 2.0 (owner decision pending; facts in #7). IndexNow. Client-side read-only guard. Special handling of non-JSON 2xx bodies. Retries and backoff stay out.

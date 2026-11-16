@@ -7,7 +7,7 @@ Zero-dependency Node CLI covering every Bing Webmaster Tools API method.
 ## Install
 
 ```sh
-npm i -g bing-webmaster-cli
+npm i -g bing-webmaster-cli                # Node >= 26
 export BING_WEBMASTER_API_KEY=<your key>   # from Bing Webmaster Tools → Settings → API Access
 ```
 
@@ -37,7 +37,7 @@ bwt --help                            # usage + methods
 - Unknown flag, bad value, or repeated non-list flag: fails before any request. The error names the flag and lists valid params.
 - `bwt schema` prints `{ "<Method>": { "verb": "GET"|"POST", "params": { "<name>": <type> } } }`. `<type>` is a .NET type string, `{ "enum", "flags"?, "members": { name: number } }`, or `{ "contract", "__type", "fields": { name: <type> } }`.
 
-Covers all 62 API methods. See `SPEC.md` for the full inventory and design.
+Covers all 62 API methods. See `SPEC.md` for the full inventory and design. Live status per method: [`docs/verification-matrix.md`](docs/verification-matrix.md). Changes per release: [`CHANGELOG.md`](CHANGELOG.md).
 
 Skipped (add on demand): OAuth (apikey only), table/CSV output, disk cache, retries, per-command help.
 

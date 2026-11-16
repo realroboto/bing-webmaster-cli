@@ -27,7 +27,7 @@ bwt <Method> [--param value ...] [--raw]
 
 - Method name is case-insensitive; canonical casing is sent.
 - `Get*` → GET, everything else → POST; a `Get*` with a DataContract param (`GetChildrenUrlInfo`) POSTs. `apikey` always rides the query string. Verb is automatic — never specify it.
-- DataContract params (`blockedUrl`, `settings`, `siteRole`, `crawlSettings`, `filterProperties`): pass each field as a flat flag, folded into the nested object with `__type`. Omitted fields stay omitted; `FilterProperties` fields default to `0` (Any). `bwt schema` lists the fields.
+- DataContract params (`blockedUrl`, `settings`, `siteRole`, `crawlSettings`, `filterProperties`): pass each field as a flat flag, folded into the nested object with `__type`. The param itself (`--blockedUrl`) is not a flag. Omitted fields stay omitted; `FilterProperties` fields default to `0` (Any). `bwt schema` lists the fields.
 - Enum flags take the member name (any case) or its number. `bwt schema` lists members. `[Flags]` enums (`HttpCodeFilters`, `DocFlagsFilters`) also take an OR of members as a number.
 - Example: `bwt GetChildrenUrlInfo --siteUrl https://x.com --url https://x.com/blog --page 0 --httpCodeFilters Code4xx`.
   - `--httpCodeFilters`: Code2xx=1, Code3xx=2, Code301=4, Code302=8, Code4xx=16, Code5xx=32, AllOthers=64.
