@@ -25,7 +25,7 @@ No mutating call. 20 works, 13 empty, 3 fault.
 |---|---|---|---|
 | GetUserSites | works | 2026-11-16 | Lists both verified sites. |
 | GetSiteRoles | works | 2026-11-16 | `--includeAllSubdomains false`. |
-| GetSiteMoves | fault | 2026-11-16 | 404, empty body, also with no params. Unknown method names answer the same 404. Reference shows `[WebGet]`, no `Obsolete`. Upstream: JSON endpoint does not serve it. |
+| GetSiteMoves | fault | 2026-11-16 | 404, empty body, also with no params. A made-up name (`GetNoSuchMethod`) answers the same 404. Reference shows `[WebGet]`, no `Obsolete`. Upstream: JSON endpoint does not serve it. |
 | GetUrlSubmissionQuota | works | 2026-11-16 | |
 | GetFetchedUrls | empty | 2026-11-16 | No FetchUrl on the site yet. |
 | GetFetchedUrlDetails | empty | 2026-11-16 | `--url <S>` → `null` (not fetched). Re-check after FetchUrl (#14). |
@@ -44,13 +44,13 @@ No mutating call. 20 works, 13 empty, 3 fault.
 | GetKeywordStats | works | 2026-11-16 | `--q books --country us --language en-US`. |
 | GetRelatedKeywords | works | 2026-11-16 | Same flags as GetKeyword. |
 | GetLinkCounts | empty | 2026-11-16 | `--page 0` → `Links: []`, `TotalPages: 0`. |
-| GetUrlLinks | empty | 2026-11-16 | `--link <S> --page 0` → `Details: []`. |
+| GetUrlLinks | empty | 2026-11-16 | `--link <S> --page 0` → `Details: []`. The `400 InvalidUrl (ErrorCode 7)` of #3 does not occur. |
 | GetConnectedPages | empty | 2026-11-16 | |
 | GetBlockedUrls | empty | 2026-11-16 | |
 | GetActivePagePreviewBlocks | empty | 2026-11-16 | |
 | GetDeepLinkBlocks | empty | 2026-11-16 | |
 | GetDeepLinkAlgoUrls | fault | 2026-11-16 | 404, empty body. Reference marks it `[Obsolete("no longer in use", true)]`. Upstream: retired. |
-| GetDeepLink | fault | 2026-11-16 | `--url <S>` → 404, empty body. Obsolete, as GetDeepLinkAlgoUrls. Upstream: retired. |
+| GetDeepLink | fault | 2026-11-16 | `--url <S>` → 404, empty body. Reference marks it `[Obsolete("use GetDeepLinkBlocks", true)]`. Upstream: retired. |
 | GetUrlInfo | works | 2026-11-16 | `--url <S>` and a guide page. `HttpStatus` reads 0 on crawled pages. Root `TotalChildUrlCount: 0`. |
 | GetUrlTrafficInfo | works | 2026-11-16 | `--url <S>`. |
 | GetChildrenUrlInfo | empty | 2026-11-16 | POST with FilterProperties body, `--page 0`. `[]` for `<S>`, `/pt/`, `/pt/guias/`, `/es/guias/`, and with `--HttpCodeFilters Code2xx`. Matches `TotalChildUrlCount: 0`. |
@@ -66,11 +66,13 @@ No mutating call. 20 works, 13 empty, 3 fault.
 
 - GetUrlInfo, GetUrlTrafficInfo: 200 with data.
 - GetChildrenUrlInfo, GetChildrenUrlTrafficInfo: 200, empty. The site has no child URLs on record.
+- The second verified site on the account gives the same result: root `TotalChildUrlCount: 0`, children `[]`.
 - The FilterProperties body from #2 now gets a 200 end to end.
+- Limit: no children response with rows was seen. The request format is proven, the row format is not.
 
 ### GetCrawlSettings on 2026-11-16
 
-Input for the SaveCrawlSettings write-back (#14). It settles the CrawlSettings doc conflict: the live DataContract has the fields of the CrawlSettings page, not the example's `AjaxEnabled`. `CrawlRate` has 24 values, one per hour.
+Input for the SaveCrawlSettings write-back (#14). The live DataContract has the fields of the CrawlSettings page. It has no `AjaxEnabled`, the field of the SaveCrawlSettings example. The contract module keeps the page fields. The #14 write-back confirms that SaveCrawlSettings accepts them. `CrawlRate` has 24 values.
 
 ```json
 {

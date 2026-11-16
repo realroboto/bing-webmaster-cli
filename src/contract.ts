@@ -80,7 +80,7 @@ export const CONTRACTS = {
 			Url: "string",
 		},
 	},
-	// Fields follow the CrawlSettings page; live GetCrawlSettings returns exactly these (#13). The SaveCrawlSettings example's AjaxEnabled is stale.
+	// Fields follow the CrawlSettings page: live GetCrawlSettings returns exactly these, no AjaxEnabled (#13).
 	CrawlSettings: {
 		__type: "CrawlSettings:#Microsoft.Bing.Webmaster.Api",
 		fields: {
