@@ -2,11 +2,12 @@
 // Source: .NET reference for Microsoft.Bing.Webmaster.Api.Interfaces.IWebmasterApi
 //   https://learn.microsoft.com/en-us/dotnet/api/microsoft.bing.webmaster.api.interfaces.iwebmasterapi?view=bing-webmaster-dotnet
 //   plus each method page (C#/VB signature, JSON example) and each DataContract, property and enum page linked from it.
-// Extracted by hand 2026-11-15. Names and types are verbatim C# from the signatures; re-audit repeats the extraction.
+// Extracted by hand 2026-11-15. Names and types are verbatim C# from those pages, except BlockReason (third-party, see below).
+// Re-audit repeats the extraction.
 // Doc conflicts and gaps: see issue #8.
 
-/** Primitive C# types used by method params and DataContract fields. */
-export type Primitive =
+/** Built-in C#/BCL types used by method params and DataContract fields. */
+export type BuiltinType =
 	| "string"
 	| "bool"
 	| "short"
@@ -51,7 +52,7 @@ export const ENUMS = {
 } as const satisfies Record<string, Record<string, number>>;
 
 export type EnumName = keyof typeof ENUMS;
-type FieldType = Primitive | EnumName;
+type FieldType = BuiltinType | EnumName;
 
 /** DataContracts that appear as method params: `__type` hint and fields in page order. */
 export const CONTRACTS = {
@@ -74,7 +75,7 @@ export const CONTRACTS = {
 			Url: "string",
 		},
 	},
-	// SaveCrawlSettings example sends AjaxEnabled instead; this page is followed until a live call settles it.
+	// shortcut: fields follow the CrawlSettings page, but the SaveCrawlSettings example sends AjaxEnabled. Settle by live write-back (#14).
 	CrawlSettings: {
 		__type: "CrawlSettings:#Microsoft.Bing.Webmaster.Api",
 		fields: {
