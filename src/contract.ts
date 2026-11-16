@@ -21,8 +21,7 @@ export type BuiltinType =
 /** Enums by .NET name (nested types keep their `Outer.Inner` name). Member name -> value. */
 export const ENUMS = {
 	// Not on the .NET reference (Microsoft.Bing.Webmaster.Shared.DataContracts.BlockReason answers 404).
-	// Names = the server's own: GetActivePagePreviewBlocks renders Reason 0-2 as these, 3+ as bare digits (#14).
-	// shortcut: inferred from live output, not a documented enum (the server stores any number). Replace when Microsoft documents BlockReason.
+	// shortcut: names are the live Reason strings of GetActivePagePreviewBlocks (3+ has none, #14), replace when Microsoft documents BlockReason.
 	BlockReason: {
 		Unknown: 0,
 		ContentNeedsToBeRemoved: 1,
