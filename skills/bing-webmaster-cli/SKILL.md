@@ -57,7 +57,9 @@ bwt GetCrawlIssues --siteUrl https://x.com
 Most take `--siteUrl`. `bwt schema` prints every method with its verb, params, .NET types, enum members, and DataContract fields (source: the [`IWebmasterApi` reference](https://learn.microsoft.com/en-us/dotnet/api/microsoft.bing.webmaster.api.interfaces.iwebmasterapi?view=bing-webmaster-dotnet)); `bwt --help` adds usage. `bwt` checks flag names and types locally; the API validates the rest and returns a fault, so try the call and read the error.
 
 - **Sites** — GetUserSites, AddSite, VerifySite, RemoveSite, GetSiteMoves, SubmitSiteMove
+  VerifySite re-checks the ownership proof: `BingSiteAuth.xml`, `msvalidate.01` meta tag, or DNS CNAME. No proof on the site (a site verified by import) → `false`, and Bing clears the verified state; site methods then fail `400 NotAuthorized` (checked 2026-11-16). Run it only when the proof is live.
 - **Roles** — GetSiteRoles, AddSiteRoles, RemoveSiteRole
+  AddSiteRoles: `--authenticationCode` = site `AuthenticationCode` from GetUserSites. `--userEmail` needs a Bing Webmaster account, else `400 UserNotFound` (checked 2026-11-16).
 - **URL & content submission** — SubmitUrl, SubmitUrlBatch, GetUrlSubmissionQuota, FetchUrl, GetFetchedUrls, GetFetchedUrlDetails, SubmitContent, GetContentSubmissionQuota
 - **Crawl** — GetCrawlStats, GetCrawlIssues, GetCrawlSettings, SaveCrawlSettings
 - **Traffic & query stats** — GetQueryStats, GetQueryTrafficStats, GetQueryPageStats, GetQueryPageDetailStats, GetPageStats, GetPageQueryStats, GetRankAndTrafficStats
