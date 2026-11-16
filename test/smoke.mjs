@@ -55,7 +55,7 @@ import { buildRequest, callApi, unwrap, getApiKey, API_KEY_ENV } from "../dist/c
   assert.equal(request.init.body, undefined);
 }
 
-// 2e. an unknown or repeated filter flag errors instead of silently
+// 2e. a bad, repeated, or non-integer value errors instead of silently
 // sending null (Number([..]) → NaN → null in JSON).
 {
   const call = (params) => () => buildRequest("GetChildrenUrlInfo", params, "KEY");
@@ -99,6 +99,13 @@ import { buildRequest, callApi, unwrap, getApiKey, API_KEY_ENV } from "../dist/c
   assert.equal(weight("high"), 3);
   assert.equal(weight("2"), 2);
   assert.throws(() => weight("7"), /--weight must be a DeepLink.DeepLinkWeight member/);
+}
+
+// 2i'. a [Flags] enum takes an OR of members as a number, nothing outside them.
+{
+  const filters = (v) => () => JSON.parse(buildRequest("GetChildrenUrlInfo", { httpCodeFilters: v }, "KEY").request.init.body).filterProperties.HttpCodeFilters;
+  assert.equal(filters("5")(), 5);
+  assert.throws(filters("128"), /--httpCodeFilters must be a HttpCodeFilters member/);
 }
 
 // 2j. DataContract fields as flat flags fold into one nested object, __type
