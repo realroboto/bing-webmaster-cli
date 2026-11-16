@@ -4,22 +4,23 @@ Live status of each API method on `https://ceciliobooks.com/` (verified site on 
 
 ## Method
 
-- CLI: repo build (`node dist/cli.js`) from `51fc28c`.
+- CLI: repo build (`node dist/cli.js`) from `51fc28c` (#13) and `4d3ff50` (#14). The BlockReason check after the contract fix runs the #14 branch build.
 - Key: from `BING_WEBMASTER_API_KEY` in env, never in argv. No key, verification code, or e-mail appears here.
 - Site analytics stay out: params name their source, not the value.
 - `<S>` = `https://ceciliobooks.com/`. `<query>` = top query from GetQueryStats. `<page>` = top page from GetPageStats.
 
 ## Status
 
-| Status | Meaning                                                            |
-| ------ | ------------------------------------------------------------------ |
-| works  | HTTP 200 with data                                                 |
-| empty  | HTTP 200, no data on this site (`[]`, `null`, or empty list field) |
-| fault  | non-200; note gives the cause                                      |
+| Status  | Meaning                                                                               |
+| ------- | ------------------------------------------------------------------------------------- |
+| works   | HTTP 200 with data; mutating method: HTTP 200 and its Get* read-back shows the effect |
+| empty   | HTTP 200, no data on this site (`[]`, `null`, or empty list field)                    |
+| fault   | non-200; note gives the cause                                                         |
+| not run | not called; note gives the reason                                                     |
 
 ## Get* methods (#13)
 
-No mutating call. 20 works, 13 empty, 3 fault.
+No mutating call. 22 works, 11 empty, 3 fault. GetFetchedUrls and GetFetchedUrlDetails re-checked after the #14 FetchUrl.
 
 | Method                     | Status | Date       | Note                                                                                                                                                                                 |
 | -------------------------- | ------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -27,8 +28,8 @@ No mutating call. 20 works, 13 empty, 3 fault.
 | GetSiteRoles               | works  | 2026-11-16 | `--includeAllSubdomains false`.                                                                                                                                                      |
 | GetSiteMoves               | fault  | 2026-11-16 | 404, empty body, also with no params. A made-up name (`GetNoSuchMethod`) answers the same 404. Reference shows `[WebGet]`, no `Obsolete`. Upstream: JSON endpoint does not serve it. |
 | GetUrlSubmissionQuota      | works  | 2026-11-16 |                                                                                                                                                                                      |
-| GetFetchedUrls             | empty  | 2026-11-16 | No FetchUrl on the site yet.                                                                                                                                                         |
-| GetFetchedUrlDetails       | empty  | 2026-11-16 | `--url <S>` → `null` (not fetched). Re-check after FetchUrl (#14).                                                                                                                   |
+| GetFetchedUrls             | works  | 2026-11-16 | `[]` before any FetchUrl. Lists `<S>` (`Fetched: true`) after the #14 FetchUrl.                                                                                                      |
+| GetFetchedUrlDetails       | works  | 2026-11-16 | `--url <S>` → `null` before any FetchUrl. Fetch record and document after the #14 FetchUrl.                                                                                          |
 | GetContentSubmissionQuota  | works  | 2026-11-16 |                                                                                                                                                                                      |
 | GetCrawlStats              | works  | 2026-11-16 |                                                                                                                                                                                      |
 | GetCrawlIssues             | empty  | 2026-11-16 |                                                                                                                                                                                      |
@@ -72,7 +73,7 @@ No mutating call. 20 works, 13 empty, 3 fault.
 
 ### GetCrawlSettings on 2026-11-16
 
-Input for the SaveCrawlSettings write-back (#14). The live DataContract has the fields of the CrawlSettings page. It has no `AjaxEnabled`, the field of the SaveCrawlSettings example. The contract module keeps the page fields. The #14 write-back confirms that SaveCrawlSettings accepts them. `CrawlRate` has 24 values.
+Input for the SaveCrawlSettings write-back (#14). The live DataContract has the fields of the CrawlSettings page. It has no `AjaxEnabled`, the field of the SaveCrawlSettings example. The contract module keeps the page fields. SaveCrawlSettings accepted them in the #14 write-back. `CrawlRate` has 24 values.
 
 ```json
 {
@@ -84,3 +85,67 @@ Input for the SaveCrawlSettings write-back (#14). The live DataContract has the 
 	]
 }
 ```
+
+## Mutating and quota methods (#14)
+
+18 works, 8 not run, 0 fault. Dummy targets live under `<S>bwt-verify-14/` (no such page on the site). Each Add is followed by its Get* read-back, the Remove, and a second read-back. `<p>` = `<S>bwt-verify-14/page`.
+
+| Method                      | Status  | Date       | Note                                                                                                                                                                                                                   |
+| --------------------------- | ------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AddBlockedUrl               | works   | 2026-11-16 | `--Url <p> --EntityType Page --RequestType CacheOnly --Date 2026-11-16`. GetBlockedUrls shows the entry with `DaysToExpire: 90`.                                                                                       |
+| RemoveBlockedUrl            | works   | 2026-11-16 | Same flags as AddBlockedUrl. GetBlockedUrls → `[]`.                                                                                                                                                                    |
+| AddQueryParameter           | works   | 2026-11-16 | `--queryParameter bwtverify14`. GetQueryParameters shows it, `IsEnabled: true`.                                                                                                                                        |
+| EnableDisableQueryParameter | works   | 2026-11-16 | `--isEnabled false` → `IsEnabled: false`; bare `--isEnabled` → `true`.                                                                                                                                                 |
+| RemoveQueryParameter        | works   | 2026-11-16 | GetQueryParameters → `[]`.                                                                                                                                                                                             |
+| AddPagePreviewBlock         | works   | 2026-11-16 | `--url <p>`. Build `4d3ff50`: `--reason Other` (4), then `--reason` 1, 2, 3; 0 and 5 by raw POST. Branch build: `--reason ContentNeedsToBeRemoved` → `Reason: ContentNeedsToBeRemoved`. See BlockReason below.         |
+| RemovePagePreviewBlock      | works   | 2026-11-16 | `--url <p>` after each add. GetActivePagePreviewBlocks → `[]`.                                                                                                                                                         |
+| AddCountryRegionSettings    | works   | 2026-11-16 | `--Url <S>bwt-verify-14/ --Type Directory --TwoLetterIsoCountryCode pt --Date 2026-11-16`.                                                                                                                             |
+| RemoveCountryRegionSettings | works   | 2026-11-16 | Same flags. GetCountryRegionSettings → `[]`.                                                                                                                                                                           |
+| AddDeepLinkBlock            | works   | 2026-11-16 | `--market en-us --searchUrl <S> --deepLinkUrl <p>`. `ExpiryDate` = submit + 90 days. Upstream limit: `--market` is case-sensitive. `en-US` and `pt-BR` → `400 InvalidParameter (ErrorCode 8)`.                         |
+| RemoveDeepLinkBlock         | works   | 2026-11-16 | Same flags (`en-us`). GetDeepLinkBlocks → `[]`.                                                                                                                                                                        |
+| SubmitFeed                  | works   | 2026-11-16 | `--feedUrl <S>bwt-verify-14/feed.xml` (dummy, never a real sitemap). GetFeeds lists it, `Status: Pending`.                                                                                                             |
+| RemoveFeed                  | works   | 2026-11-16 | Same dummy URL. GetFeeds equals the start state.                                                                                                                                                                       |
+| SaveCrawlSettings           | works   | 2026-11-16 | Write-back of the GetCrawlSettings snapshot above: both bools and all 24 `CrawlRate` bytes. GetCrawlSettings after = before.                                                                                           |
+| SubmitUrl                   | works   | 2026-11-16 | `--url <S>`.                                                                                                                                                                                                           |
+| SubmitUrlBatch              | works   | 2026-11-16 | `--urlList <S>pt/,<S>es/guias/`. After SubmitUrl and SubmitUrlBatch, URL quota Daily 100 → 97, Monthly 1500 → 1497.                                                                                                    |
+| FetchUrl                    | works   | 2026-11-16 | `--url <S>`. GetFetchedUrls and GetFetchedUrlDetails show the fetch at once.                                                                                                                                           |
+| SubmitContent               | works   | 2026-11-16 | `--url <S>pt/guias/ --structuredData= --dynamicServing 0`. `--httpMessage` = base64 of the live page response (status line, headers, CRLF, body). Content quota Daily 100 → 98 (two calls, see Doc conflicts settled). |
+| AddConnectedPage            | not run | 2026-11-16 | Needs owner approval (no remove method).                                                                                                                                                                               |
+| AddSiteRoles                | not run | 2026-11-16 | Needs owner approval (sends e-mail).                                                                                                                                                                                   |
+| RemoveSiteRole              | not run | 2026-11-16 | Needs owner approval (sends e-mail).                                                                                                                                                                                   |
+| AddSite                     | not run | 2026-11-16 | Never live (#7).                                                                                                                                                                                                       |
+| RemoveSite                  | not run | 2026-11-16 | Never live (#7).                                                                                                                                                                                                       |
+| SubmitSiteMove              | not run | 2026-11-16 | Never live (#7).                                                                                                                                                                                                       |
+| UpdateDeepLink              | not run | 2026-11-16 | Never live (#7): obsolete.                                                                                                                                                                                             |
+| VerifySite                  | not run | 2026-11-16 | In no live list of #7 or #14.                                                                                                                                                                                          |
+
+### Start state restored
+
+Each Get* below ran before the first and after the last call. Output is byte-identical.
+
+- GetBlockedUrls, GetQueryParameters, GetActivePagePreviewBlocks
+- GetCountryRegionSettings, GetDeepLinkBlocks, GetFeeds
+- GetCrawlSettings, GetConnectedPages, GetSiteRoles
+
+Changed by design (quota calls, no setting): GetUrlSubmissionQuota, GetContentSubmissionQuota, GetFetchedUrls, GetFetchedUrlDetails.
+
+### BlockReason on the wire
+
+Microsoft documents no BlockReason page. GetActivePagePreviewBlocks echoes `BlockReason` as sent and adds the server string `Reason`:
+
+| Sent | `Reason`                  |
+| ---- | ------------------------- |
+| 0    | `Unknown`                 |
+| 1    | `ContentNeedsToBeRemoved` |
+| 2    | `PoorQualityAndIncorrect` |
+| 3    | `3`                       |
+| 4    | `4`                       |
+| 5    | `5`                       |
+
+The server stores any number and names only 0-2. `src/contract.ts` takes these names. The third-party names (`AdultContent`, `Copyright`, `IllegalContent`, `Other`) are gone. The CLI now rejects 3 and up before any request: the server has no name for them.
+
+### Doc conflicts settled
+
+- CrawlSettings: SaveCrawlSettings accepts the CrawlSettings page fields. GetCrawlSettings returns no `AjaxEnabled` (#13). `AjaxEnabled` was not sent.
+- SubmitContent `dynamicServing`: the JSON number `0` (CLI) and the string `"0"` (example, raw POST) both get 200. Same URL and page for both calls. The contract keeps `int`; the CLI sends a number.
+- Body dates: `--Date 2026-11-16` sends `"Date":"/Date(1794787200000)/"` with no offset. AddBlockedUrl and AddCountryRegionSettings accept it. The read-back `Date` is the submit time, not the sent date.

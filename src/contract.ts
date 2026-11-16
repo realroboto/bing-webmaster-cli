@@ -2,7 +2,7 @@
 // Source: .NET reference for Microsoft.Bing.Webmaster.Api.Interfaces.IWebmasterApi
 //   https://learn.microsoft.com/en-us/dotnet/api/microsoft.bing.webmaster.api.interfaces.iwebmasterapi?view=bing-webmaster-dotnet
 //   plus each method page (C#/VB signature, JSON example) and each DataContract, property and enum page linked from it.
-// Extracted by hand 2026-11-15. Names and types are verbatim C# from those pages, except BlockReason (third-party, see below).
+// Extracted by hand 2026-11-15. Names and types are verbatim C# from those pages, except BlockReason (live server, see below).
 // Re-audit repeats the extraction.
 // Doc conflicts and gaps: see issue #8.
 // Live status per method: docs/verification-matrix.md.
@@ -21,8 +21,12 @@ export type BuiltinType =
 /** Enums by .NET name (nested types keep their `Outer.Inner` name). Member name -> value. */
 export const ENUMS = {
 	// Not on the .NET reference (Microsoft.Bing.Webmaster.Shared.DataContracts.BlockReason answers 404).
-	// shortcut: names are third-party (merj/bing-webmaster-tools models/content_blocking.py); values 1-4 match its live cassette. Replace when Microsoft documents BlockReason.
-	BlockReason: { AdultContent: 1, Copyright: 2, IllegalContent: 3, Other: 4 },
+	// shortcut: names are the live Reason strings of GetActivePagePreviewBlocks (3+ has none, #14), replace when Microsoft documents BlockReason.
+	BlockReason: {
+		Unknown: 0,
+		ContentNeedsToBeRemoved: 1,
+		PoorQualityAndIncorrect: 2,
+	},
 	"BlockedUrl.BlockedUrlEntityType": { Page: 0, Directory: 1 },
 	"BlockedUrl.BlockedUrlRequestType": { CacheOnly: 0, FullRemoval: 1 },
 	"CountryRegionSettings.CountryRegionSettingsType": {
